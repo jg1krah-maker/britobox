@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Brito Box</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js para os Gráficos Financeiros -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    },
+                    colors: {
+                        brito: {
+                            bgLight: '#f8fafc',
+                            bgDark: '#0f172a',
+                            accent: '#3b82f6',
+                            accentHover: '#2563eb',
+                            justice: { 600: '#486581', 700: '#334e68', 800: '#243b53', 900: '#102a43' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body { transition: background-color 0.3s, color 0.3s; overflow-x: hidden; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #334155; }
+        
+        .fade-in { animation: fadeIn 0.2s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .view-hidden { display: none !important; }
+
+        /* Responsividade para Tabelas do Finanças */
+        .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .fin-table { width: 100%; min-width: 500px; border-collapse: collapse; }
+        .fin-table th { text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.75rem 0.5rem; border-bottom: 1px solid currentColor; opacity: 0.6; font-weight: 700;}
+        .fin-table td { padding: 0.75rem 0.5rem; border-bottom: 1px solid currentColor; font-size: 0.85rem; border-color: rgba(150,150,150,0.1); }
+        .fin-table tr:last-child td { border-bottom: none; }
+        
+        /* Ajuste do Sidebar Mobile */
+        .sidebar-open { transform: translateX(0) !important; }
+        #sidebar-overlay { display: none; }
+        #sidebar-overlay.active { display: block; }
+    </style>
+</head>
+<body class="bg-brito-bgLight text-slate-800 dark:bg-brito-bgDark dark:text-slate-200 min-h-screen flex flex-col md:flex-row">
+    
+    <!-- Overlay Mobile -->
+    <div id="sidebar-overlay" onclick="window.toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 backdrop-blur-sm md:hidden"></div>
+
+    <!-- Menu Lateral -->
+    <aside id="main-sidebar" class="fixed md:static inset-y-0 left-0 w-64 bg-white dark:bg-[#1A1A1E] border-r border-gray-200 dark:border-slate-800 flex flex-col shrink-0 transition-transform transform -translate-x-full md:translate-x-0 z-40">
+        <div class="p-6 border-b border-gray-200 dark:border-slate-800">
+            <div class="flex justify-between items-center mb-5">
+                <h1 class="text-2xl font-serif font-bold text-slate-900 dark:text-white tracking-tight">Brito Box</h1>
+                <button id="theme-toggle" onclick="window.toggleTheme()" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-slate-500">
+                    <i id="theme-icon" class="fas fa-moon text-lg"></i>
+                </button>
+            </div>
+            
+            <!-- Auth Section (Firebase) -->
+            <div id="auth-section" class="flex flex-col">
+                <button id="btn-login" onclick="window.loginGoogle()" class="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-center gap-2 transition-colors">
+                    <i class="fab fa-google text-red-500 text-sm"></i> Entrar com Google
+                </button>
+                
+                <div id="user-info" class="hidden flex-col bg-gray-50 dark:bg-slate-800/50 p-3 rounded-lg border border-gray-100 dark:border-slate-700">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <img id="user-avatar" class="w-8 h-8 rounded-full border border-gray-200 dark:border-slate-600" src="" alt="Avatar">
+                        <div class="overflow-hidden">
+                            <p id="user-name" class="text-xs font-bold text-slate-900 dark:text-white truncate">Carregando...</p>
+                            <p id="sync-status" class="text-[10px] text-gray-500 font-medium"><i class="fas fa-sync fa-spin text-[9px] mr-1"></i>Conectando</p>
+                        </div>
+                    </div>
+                    <button onclick="window.logoutGoogle()" class="text-xs text-gray-500 hover:text-red-500 text-left font-medium transition-colors"><i class="fas fa-sign-out-alt mr-1"></i>Sair da conta</button>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">Tarefas</div>
+            <button class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors bg-brito-accent/10 text-brito-accent dark:bg-brito-accent/20" data-tab="all">
+                <div class="flex items-center space-x-3"><i class="fas fa-home w-5 text-center"></i><span class="font-medium text-sm">Todas</span></div>
+                <span id="count-all" class="text-xs bg-gray-100 dark:bg-slate-800 py-1 px-2 rounded-full">0</span>
+            </button>
+            <button class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800" data-tab="today">
+                <div class="flex items-center space-x-3"><i class="far fa-calendar w-5 text-center"></i><span class="font-medium text-sm">Para Hoje</span></div>
+                <span id="count-today" class="text-xs bg-gray-100 dark:bg-slate-800 py-1 px-2 rounded-full text-red-500 font-bold hidden">0</span>
+            </button>
+            <button class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800" data-tab="week">
+                <div class="flex items-center space-x-3"><i class="far fa-calendar-alt w-5 text-center"></i><span class="font-medium text-sm">Esta Semana</span></div>
+            </button>
+
+            <div class="mt-8 mb-2 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Ferramentas</div>
+            
+            <button class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800" data-tab="finances">
+                <i class="fas fa-wallet w-5 text-center"></i><span class="font-medium text-sm">Finanças</span>
+            </button>
+
+            <button class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800" data-tab="calculator">
+                <i class="fas fa-calculator w-5 text-center"></i><span class="font-medium text-sm">Calculadora TJSE</span>
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-gray-200 dark:border-slate-800">
+            <button onclick="window.openSettingsModal()" class="w-full flex items-center space-x-3 px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                <i class="fas fa-cog w-5 text-center"></i><span class="font-medium text-sm">Configurações</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Área Principal -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative" id="main-content">
+        
+        <!-- HEADER PRINCIPAL -->
+        <header class="bg-white/80 dark:bg-[#1A1A1E]/80 backdrop-blur-md border-b border-gray-200 dark:border-slate-800 px-4 md:px-8 py-4 flex justify-between items-center z-10 sticky top-0">
+            <div class="flex items-center space-x-3">
+                <button onclick="window.toggleSidebar()" class="md:hidden text-slate-500 p-2 -ml-2 rounded hover:bg-gray-100 dark:hover:bg-slate-800">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <div>
+                    <h1 id="header-title" class="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Todas as Tarefas</h1>
+                    <p id="header-subtitle" class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-0.5">Nuvem Firebase</p>
+                </div>
+            </div>
+            
+            <button id="btn-new-task" onclick="window.openTaskModal()" class="px-3 py-2 md:px-5 md:py-2.5 bg-brito-accent hover:bg-brito-accentHover text-white text-sm font-medium rounded-xl transition-colors shadow-md flex items-center space-x-2">
+                <i class="fas fa-plus"></i><span class="hidden md:inline">Nova Tarefa</span>
+            </button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar relative">
+            
+            <!-- VIEW DAS TAREFAS -->
+            <div id="tasks-view" class="space-y-3 max-w-5xl mx-auto pb-20 fade-in">
+                <div id="tasks-list"></div>
+            </div>
+
+            <!-- VIEW DA CALCULADORA -->
+            <div id="calculator-view" class="max-w-3xl mx-auto w-full pb-10 fade-in view-hidden">
+                <div class="bg-white dark:bg-[#1A1A1E] p-6 md:p-10 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800 transition-colors">
+                    <header class="text-center mb-8">
+                        <h2 class="text-2xl md:text-3xl font-serif font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Calculadora de Prazos</h2>
+                        <div class="h-1 w-16 bg-brito-accent mx-auto rounded-full mb-2"></div>
+                        <p class="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">TJSE • CPC • 2025/2026</p>
+                    </header>
+
+                    <div class="mb-6 border-b border-gray-200 dark:border-slate-700">
+                        <nav class="flex space-x-6 overflow-x-auto custom-scrollbar" aria-label="Tabs">
+                            <button class="calc-tab-btn pb-3 px-1 border-b-2 font-medium text-sm transition-all border-brito-accent text-brito-accent" data-calctab="dje">Diário da Justiça</button>
+                            <button class="calc-tab-btn pb-3 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-slate-800 dark:hover:text-white transition-all" data-calctab="eletronica">Intimação Eletrônica</button>
+                        </nav>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- DJE Form -->
+                        <div id="calc-dje" class="calc-content block">
+                            <form id="form-dje" onsubmit="window.calculatePrazoEvent(event, 'dje')" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="col-span-1 md:col-span-2 space-y-1"><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Comarca</label><select id="comarca-dje" class="w-full bg-gray-50 dark:bg-[#121214] border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brito-accent outline-none appearance-none"></select></div>
+                                <div class="col-span-1 md:col-span-2 space-y-1"><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Tipo de Prazo</label><select id="prazo-tipo-dje" class="w-full bg-gray-50 dark:bg-[#121214] border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brito-accent outline-none appearance-none"></select></div>
+                                <div class="space-y-1"><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Disponibilização</label><input type="date" id="disponibilizacao-date" class="w-full bg-gray-50 dark:bg-[#121214] border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-brito-accent outline-none" required><p id="disponibilizacao-weekday" class="text-xs text-brito-accent font-medium mt-1 h-4"></p></div>
+                                <div id="custom-prazo-dje-wrapper" style="display: none;" class="space-y-1"><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Dias Úteis</label><input type="number" id="custom-prazo-dje" min="1" class="w-full bg-gray-50 dark:bg-[#121214] border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-brito-accent outline-none"></div>
+                                <div class="col-span-1 md:col-span-2 pt-2"><button type="submit" class="w-full bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-bold py-3 rounded-xl shadow-sm transition-all">Calcular Prazo</button></div>
+                            </form>
+                            <div id="result-dje" class="mt-8"></div>
+                        </div>
+
+                        <!-- Eletronica Form -->
+                        <div id="calc-eletronica" class="calc-content hidden">
+                            <form id="form-eletronica" onsubmit="window.calculatePrazoEvent(event, 'eletronica')" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="col-span-1 md:col-span-2 space-y-1"><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Comarca</label><select id="comarca-eletronica" class="w-full bg-gray-50 dark:bg-[#121214] border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brito-accent outline-none appearance-none"></select></div>
+                                <div class="col-span-1 md:col-span-2 space-y-1"><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Tipo de Prazo</label><select id="prazo-tipo-eletronica" class="w-full bg-gray-50 dark:bg-[#121214] border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-brito-accent outline-none appearance-none"></select></div>
+                                <div class="space-y-1"><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Data da Certificação</label><input type="date" id="certificacao-date" class="w-full bg-gray-50 dark:bg-[#121214] border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-brito-accent outline-none" required><p id="certificacao-weekday" class="text-xs text-brito-accent font-medium mt-1 h-4"></p></div>
+                                <div id="custom-prazo-eletronica-wrapper" style="display: none;" class="space-y-1"><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider">Dias Úteis</label><input type="number" id="custom-prazo-eletronica" min="1" class="w-full bg-gray-50 dark:bg-[#121214] border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-brito-accent outline-none"></div>
+                                <div class="col-span-1 md:col-span-2 pt-2"><button type="submit" class="w-full bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-bold py-3 rounded-xl shadow-sm transition-all">Calcular Prazo</button></div>
+                            </form>
+                            <div id="result-eletronica" class="mt-8"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW DE FINANÇAS -->
+            <div id="finances-view" class="max-w-6xl mx-auto pb-10 fade-in view-hidden">
+                
+                <div class="flex items-center justify-center space-x-2 md:space-x-6 mb-8 border-b border-gray-200 dark:border-slate-800 pb-2 overflow-x-auto custom-scrollbar">
+                    <button class="fin-nav-btn text-brito-accent border-b-2 border-brito-accent pb-2 px-2 text-sm font-bold whitespace-nowrap" data-fintab="overview">Panorama Anual</button>
+                    <button class="fin-nav-btn text-gray-500 hover:text-slate-800 dark:hover:text-white border-b-2 border-transparent pb-2 px-2 text-sm font-medium transition-colors whitespace-nowrap" data-fintab="monthly">Gestão Mensal</button>
+                    <button class="fin-nav-btn text-gray-500 hover:text-slate-800 dark:hover:text-white border-b-2 border-transparent pb-2 px-2 text-sm font-medium transition-colors whitespace-nowrap" data-fintab="notes">Anotações</button>
+                </div>
+
+                <!-- TAB: VISÃO GERAL -->
+                <div id="fin-tab-overview" class="fade-in">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 rounded-2xl p-5 text-center shadow-sm">
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Entradas Totais</p>
+                            <p class="text-xl md:text-2xl text-green-600 font-bold" id="fin-total-in">R$ 0,00</p>
+                        </div>
+                        <div class="bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 rounded-2xl p-5 text-center shadow-sm">
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Saídas Totais</p>
+                            <p class="text-xl md:text-2xl text-red-500 font-bold" id="fin-total-out">R$ 0,00</p>
+                        </div>
+                        <div class="bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 rounded-2xl p-5 text-center shadow-sm">
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Balanço Líquido</p>
+                            <p class="text-xl md:text-2xl text-brito-accent font-bold" id="fin-total-balance">R$ 0,00</p>
+                        </div>
+                        <div class="bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 rounded-2xl p-5 text-center shadow-sm">
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-1 font-bold">Meses Registrados</p>
+                            <p class="text-xl md:text-2xl text-slate-900 dark:text-white font-bold" id="fin-total-months">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+                        <h3 class="text-center text-sm font-bold text-gray-500 uppercase tracking-wider mb-6">Fluxo Financeiro (Ano)</h3>
+                        <div class="h-64 w-full"><canvas id="financeLineChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- TAB: MENSAL -->
+                <div id="fin-tab-monthly" class="fade-in view-hidden">
+                    <div class="flex items-center border-b border-gray-200 dark:border-slate-800 mb-6 pb-2 overflow-x-auto custom-scrollbar" id="fin-months-bar"></div>
+
+                    <div id="fin-empty-month" class="text-center py-20 bg-white dark:bg-[#1A1A1E] border border-dashed border-gray-300 dark:border-slate-700 rounded-2xl view-hidden">
+                        <i class="fas fa-folder-open text-5xl text-gray-300 dark:text-gray-600 mb-4"></i>
+                        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Nenhum mês selecionado</h3>
+                        <p class="text-sm text-gray-500 mb-6">Crie um novo mês clicando no "+" acima. Contas fixas e parcelas serão importadas magicamente.</p>
+                    </div>
+
+                    <div id="fin-month-content" class="view-hidden">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl md:text-2xl font-bold text-slate-900 dark:text-white" id="fin-month-title">Fatura</h2>
+                            <button onclick="window.finDeleteCurrentMonth()" class="text-xs text-red-500 hover:text-red-700 font-bold px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"><i class="fas fa-trash-alt mr-1"></i>Excluir Mês</button>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-white dark:bg-[#1A1A1E] border-l-4 border-green-500 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
+                                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Entrada</p>
+                                <p class="text-lg md:text-xl text-slate-900 dark:text-white font-bold" id="card-in">R$ 0,00</p>
+                            </div>
+                            <div class="bg-white dark:bg-[#1A1A1E] border-l-4 border-red-500 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
+                                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Saída (Contas)</p>
+                                <p class="text-lg md:text-xl text-slate-900 dark:text-white font-bold" id="card-out">R$ 0,00</p>
+                            </div>
+                            <div class="bg-white dark:bg-[#1A1A1E] border-l-4 border-brito-accent p-4 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700" id="card-balance-border">
+                                <p class="text-[10px] text-gray-500 uppercase tracking-widest font-bold mb-1">Saldo Livre</p>
+                                <p class="text-lg md:text-xl font-bold" id="card-balance">R$ 0,00</p>
+                            </div>
+                            <div class="bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 p-4 rounded-xl shadow-sm flex flex-col justify-center">
+                                <div class="flex justify-between text-[10px] text-gray-500 font-bold mb-2"><span>COMPROMETIDO</span><span id="card-usage-text">0%</span></div>
+                                <div class="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2"><div class="bg-brito-accent h-2 rounded-full transition-all" id="card-usage-bar" style="width: 0%"></div></div>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico do Mês -->
+                        <div class="hidden md:block bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 rounded-xl p-5 h-48 mb-6 shadow-sm">
+                            <canvas id="financeBarChart"></canvas>
+                        </div>
+
+                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            
+                            <!-- Rendimentos -->
+                            <div class="bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 rounded-2xl flex flex-col shadow-sm overflow-hidden">
+                                <div class="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/20"><h3 class="font-bold text-slate-900 dark:text-white">Rendimentos</h3></div>
+                                <div class="p-4 bg-gray-50 dark:bg-[#121214]">
+                                    <form id="form-income" onsubmit="window.finAddIncome(event)" class="flex flex-col md:flex-row gap-2">
+                                        <input type="text" id="inc-source" required placeholder="Fonte (ex: Salário)" class="w-full bg-white dark:bg-[#1A1A1E] border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-brito-accent text-slate-900 dark:text-white">
+                                        <div class="flex gap-2 w-full md:w-auto">
+                                            <input type="number" id="inc-val" required step="0.01" placeholder="Valor" class="flex-1 md:w-28 bg-white dark:bg-[#1A1A1E] border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-brito-accent text-right text-slate-900 dark:text-white">
+                                            <label class="flex items-center text-xs font-bold text-gray-500 px-2 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-[#1A1A1E] cursor-pointer"><input type="checkbox" id="inc-fixed" class="mr-1.5 accent-brito-accent"> Fixo</label>
+                                            <button type="submit" class="bg-brito-accent hover:bg-brito-accentHover text-white font-bold px-4 rounded-lg transition-colors"><i class="fas fa-check"></i></button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="p-4 flex-1 table-container">
+                                    <table class="fin-table text-slate-900 dark:text-white" id="table-income">
+                                        <thead><tr><th>Fonte</th><th class="text-right">Valor</th><th class="text-center">Fixo</th><th></th></tr></thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                                <div class="p-4 border-t border-gray-100 dark:border-slate-800 flex justify-between bg-gray-50/50 dark:bg-slate-800/20 text-sm">
+                                    <span class="text-gray-500 font-bold uppercase">Total</span><span class="font-bold text-green-600" id="total-income">R$ 0,00</span>
+                                </div>
+                            </div>
+
+                            <!-- Contas a Pagar -->
+                            <div class="bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 rounded-2xl flex flex-col shadow-sm overflow-hidden">
+                                <div class="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/20 flex justify-between items-center"><h3 class="font-bold text-slate-900 dark:text-white">Contas e Despesas</h3></div>
+                                <div class="p-4 bg-gray-50 dark:bg-[#121214]">
+                                    <form id="form-bill" onsubmit="window.finAddBill(event)" class="flex flex-col md:flex-row gap-2">
+                                        <input type="text" id="bill-name" required placeholder="Nova Conta" class="w-full bg-white dark:bg-[#1A1A1E] border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-400 text-slate-900 dark:text-white">
+                                        <div class="flex gap-2 w-full md:w-auto">
+                                            <input type="number" id="bill-val" required step="0.01" placeholder="Valor" class="flex-1 md:w-28 bg-white dark:bg-[#1A1A1E] border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-400 text-right text-slate-900 dark:text-white">
+                                            <label class="flex items-center text-xs font-bold text-gray-500 px-2 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-[#1A1A1E] cursor-pointer"><input type="checkbox" id="bill-fixed" class="mr-1.5 accent-brito-accent"> Fixo</label>
+                                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold px-4 rounded-lg transition-colors"><i class="fas fa-check"></i></button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="p-4 flex-1 table-container">
+                                    <table class="fin-table text-slate-900 dark:text-white" id="table-bills">
+                                        <thead><tr><th>Conta / Fatura</th><th class="text-center">Fixo</th><th class="text-right">Valor Final</th><th></th></tr></thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                                <div class="p-4 border-t border-gray-100 dark:border-slate-800 flex justify-between bg-gray-50/50 dark:bg-slate-800/20 text-sm">
+                                    <span class="text-gray-500 font-bold uppercase">Total a Pagar</span><span class="font-bold text-red-500" id="total-bills">R$ 0,00</span>
+                                </div>
+                            </div>
+                            
+                            <!-- A Receber -->
+                            <div class="bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 rounded-2xl flex flex-col shadow-sm overflow-hidden">
+                                <div class="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/20"><h3 class="font-bold text-slate-900 dark:text-white">A Receber</h3></div>
+                                <div class="p-4 bg-gray-50 dark:bg-[#121214]">
+                                    <form id="form-rec" onsubmit="window.finAddRec(event)" class="flex flex-col md:flex-row gap-2">
+                                        <input type="text" id="rec-who" required placeholder="Quem te deve?" class="w-full md:flex-1 bg-white dark:bg-[#1A1A1E] border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-900 dark:text-white">
+                                        <input type="text" id="rec-what" placeholder="O quê?" class="w-full md:flex-1 bg-white dark:bg-[#1A1A1E] border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-slate-900 dark:text-white">
+                                        <div class="flex gap-2 w-full md:w-auto">
+                                            <input type="number" id="rec-val" required step="0.01" placeholder="Valor" class="flex-1 w-24 bg-white dark:bg-[#1A1A1E] border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500 text-right text-slate-900 dark:text-white">
+                                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 rounded-lg transition-colors"><i class="fas fa-plus"></i></button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="p-4 flex-1 table-container">
+                                    <table class="fin-table text-slate-900 dark:text-white" id="table-rec">
+                                        <thead><tr><th>Devedor</th><th class="text-right">Valor</th><th class="text-center">Recebido</th><th></th></tr></thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                                <div class="p-4 border-t border-gray-100 dark:border-slate-800 flex justify-between bg-gray-50/50 dark:bg-slate-800/20 text-sm">
+                                    <span class="text-gray-500 font-bold uppercase">Falta Receber</span><span class="font-bold text-blue-600" id="total-rec">R$ 0,00</span>
+                                </div>
+                            </div>
+
+                            <!-- Dívidas Parceladas -->
+                            <div class="bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 rounded-2xl flex flex-col shadow-sm overflow-hidden xl:col-span-1">
+                                <div class="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/20"><h3 class="font-bold text-slate-900 dark:text-white">Dívidas Parceladas</h3></div>
+                                <div class="p-4 bg-gray-50 dark:bg-[#121214]">
+                                    <form id="form-inst" onsubmit="window.finAddInst(event)" class="flex flex-col md:flex-row gap-2">
+                                        <div class="flex gap-2 w-full md:w-1/2">
+                                            <input type="text" id="inst-item" required placeholder="Produto" class="w-full bg-white dark:bg-[#1A1A1E] border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-brito-accent text-slate-900 dark:text-white">
+                                            <input type="text" id="inst-card" placeholder="Cartão" class="w-full bg-white dark:bg-[#1A1A1E] border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-brito-accent text-slate-900 dark:text-white">
+                                        </div>
+                                        <div class="flex gap-2 w-full md:w-1/2 items-center">
+                                            <input type="number" id="inst-val" required step="0.01" placeholder="R$ Parcela" class="w-full bg-white dark:bg-[#1A1A1E] border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-brito-accent text-right text-slate-900 dark:text-white">
+                                            <span class="text-gray-400 text-xs font-bold w-4 text-center">X</span>
+                                            <input type="number" id="inst-qtd" required min="2" placeholder="Total" class="w-20 bg-white dark:bg-[#1A1A1E] border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-brito-accent text-center text-slate-900 dark:text-white">
+                                            <button type="submit" class="bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white font-bold px-4 py-2 rounded-lg transition-colors whitespace-nowrap">Criar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="p-4 flex-1 table-container">
+                                    <table class="fin-table text-slate-900 dark:text-white" id="table-inst">
+                                        <thead><tr><th>Item</th><th class="text-center">Progresso (Mês a Mês)</th><th class="text-right">Restante</th><th></th></tr></thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                                <div class="p-4 border-t border-gray-100 dark:border-slate-800 flex justify-between bg-gray-50/50 dark:bg-slate-800/20 text-sm">
+                                    <span class="text-gray-500 font-bold uppercase">Dívida Futura</span><span class="font-bold text-red-500" id="total-inst">R$ 0,00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: ANOTAÇÕES -->
+                <div id="fin-tab-notes" class="fade-in view-hidden flex flex-col h-[70vh]">
+                    <div class="bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 rounded-2xl flex flex-col shadow-sm overflow-hidden h-full">
+                        <div class="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/20"><h3 class="font-bold text-slate-900 dark:text-white">Caderno de Notas Financeiras</h3></div>
+                        <textarea id="fin-notes-area" class="w-full flex-1 bg-transparent p-6 text-slate-800 dark:text-slate-200 font-sans text-sm resize-none outline-none custom-scrollbar leading-relaxed" placeholder="Cole aqui extratos, faça continhas..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- MODAIS DAS TAREFAS -->
+    <div id="modal-task" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50 backdrop-blur-sm fade-in">
+        <div class="bg-white dark:bg-[#1A1A1E] w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/30">
+                <h2 id="modal-task-title" class="text-xl font-bold text-slate-900 dark:text-white">Nova Tarefa</h2>
+                <button onclick="window.closeTaskModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <form id="form-task" onsubmit="window.saveTask(event)" class="p-6 overflow-y-auto custom-scrollbar space-y-5">
+                <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Título / Peça *</label><input required id="task-title" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Cliente</label><input id="task-client" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nº Processo</label><input id="task-case" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-brito-accent outline-none"></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Data de Confecção</label><input type="date" id="task-conf" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Prazo Fatal</label><input type="date" id="task-fatal" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Complexidade</label><select id="task-complexity" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none"><option value="Baixa">Baixa</option><option value="Media" selected>Média</option><option value="Alta">Alta</option></select></div>
+                </div>
+                <div><label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Observações</label><textarea id="task-notes" rows="3" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none resize-none"></textarea></div>
+                <div class="pt-4 flex justify-end space-x-3"><button type="button" onclick="window.closeTaskModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">Cancelar</button><button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-brito-accent hover:bg-brito-accentHover rounded-lg transition-colors shadow-sm">Salvar</button></div>
+            </form>
+        </div>
+    </div>
+    <div id="modal-delete" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm fade-in">
+        <div class="bg-white dark:bg-[#1A1A1E] w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center border border-gray-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-6">Excluir Tarefa permanentemente?</h3>
+            <div class="flex justify-center space-x-3"><button onclick="window.closeDeleteModal()" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg">Cancelar</button><button onclick="window.executeDelete()" class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg">Excluir</button></div>
+        </div>
+    </div>
+    <div id="modal-settings" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50 backdrop-blur-sm fade-in">
+        <div class="bg-white dark:bg-[#1A1A1E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/30">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Configurações</h2>
+                <button onclick="window.closeSettingsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div><label class="block text-sm font-bold text-slate-900 dark:text-white mb-2">Limpeza de Tarefas Concluídas</label><select id="select-delete-delay" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none"><option value="0">Imediatamente</option><option value="1">Após 1 dia</option><option value="3">Após 3 dias</option><option value="7">Após 7 dias</option><option value="never">Nunca</option></select></div>
+            </div>
+            <div class="p-4 bg-gray-50 dark:bg-slate-800/30 border-t border-gray-100 dark:border-slate-800 flex justify-end"><button onclick="window.saveSettings()" class="px-5 py-2 text-sm font-medium text-white bg-brito-accent hover:bg-brito-accentHover rounded-lg shadow-sm">Concluir</button></div>
+        </div>
+    </div>
+    <!-- Modal Certidão Calculadora -->
+    <div id="certidao-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 fade-in">
+        <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full overflow-hidden">
+            <div class="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+                <h3 class="text-sm font-bold uppercase text-gray-500 tracking-wider">Certidão Visual</h3>
+                <button onclick="window.closeCertidaoModal()" class="text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-8 bg-brito-paper text-black">
+                <div class="border-l-4 border-black pl-5 py-1 mb-6">
+                    <h2 class="text-2xl font-serif font-bold text-black leading-tight">Certidão de Tempestividade</h2>
+                    <p class="text-sm text-gray-600 font-serif italic mt-1">Memória de Cálculo Processual</p>
+                </div>
+                <div class="space-y-3 font-serif text-sm leading-relaxed">
+                    <div class="flex justify-between border-b border-gray-200 pb-2"><span class="font-bold text-gray-700">Comarca:</span><span id="cert-comarca"></span></div>
+                    <div class="flex justify-between border-b border-gray-200 pb-2"><span class="font-bold text-gray-700">Evento Inicial:</span><span id="cert-evento-tipo"></span></div>
+                    <div class="flex justify-between border-b border-gray-200 pb-2"><span class="font-bold text-gray-700">Data do Evento:</span><span id="cert-data-evento" class="font-medium"></span></div>
+                    <div class="flex justify-between border-b border-gray-200 pb-2"><span class="font-bold text-gray-700">Início da Contagem:</span><span id="cert-inicio-contagem" class="font-medium"></span></div>
+                    <div class="py-2">
+                        <span class="font-bold text-gray-700 block mb-1">Ocorrências (Feriados/Suspensões):</span>
+                        <ul id="cert-feriados-list" class="list-disc pl-5 text-gray-600 text-xs space-y-1"></ul>
+                    </div>
+                    <div class="mt-6 pt-4 border-t-2 border-slate-800 flex justify-between items-end"><span class="font-bold text-lg uppercase tracking-wide">Prazo Fatal:</span><span id="cert-data-fatal" class="text-3xl font-bold font-serif"></span></div>
+                </div>
+                <div class="mt-8 text-center"><p class="text-[10px] text-gray-400 uppercase tracking-widest">Brito Box • TJSE 2025/2026</p></div>
+            </div>
+            <div class="p-4 bg-gray-50 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center text-center">
+                <span class="text-xs text-gray-500 mb-2 md:mb-0">Tire um print (Win+Shift+S) da área amarelada.</span>
+                <button onclick="window.closeCertidaoModal()" class="px-4 py-2 bg-white border border-gray-300 rounded text-sm font-medium hover:bg-gray-100 text-gray-700 w-full md:w-auto">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+<!-- ======================================================= -->
+<!-- CÉREBRO DO SISTEMA: PERSISTÊNCIA OFFLINE ROBUSTA        -->
+<!-- ======================================================= -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { initializeFirestore, persistentLocalCache, persistentSingleTabManager, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    // 1. ESTADO GLOBAL (Carregamento Ultrarrápido)
+    window.appState = {
+        tasks: [],
+        finances: { months: [], notes: "" },
+        uid: null,
+        activeTab: 'all',
+        currentFinTab: 'overview',
+        currentMonthId: null,
+        deleteDelay: localStorage.getItem('brito-delete-delay') || '0',
+        editingTaskId: null,
+        taskToDeleteId: null,
+        lastCalculationData: null,
+        lineChartInstance: null,
+        barChartInstance: null
+    };
+
+    // 2. FUNÇÕES GLOBAIS DE INTERFACE
+    const escapeHTML = (str) => String(str || '').replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+    const generateId = () => Date.now().toString() + Math.random().toString(36).substr(2, 5);
+    const formatBRL = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    const formatUIStr = (dateStr) => { if (!dateStr) return ''; const [y, m, d] = dateStr.split('-'); return `${d}/${m}/${y}`; };
+
+    window.toggleSidebar = () => { document.getElementById('main-sidebar').classList.toggle('-translate-x-full'); document.getElementById('sidebar-overlay').classList.toggle('active'); };
+    
+    window.toggleTheme = () => {
+        const html = document.documentElement; html.classList.toggle('dark');
+        localStorage.setItem('brito-theme', html.classList.contains('dark') ? 'dark' : 'light');
+        document.getElementById('theme-icon').className = html.classList.contains('dark') ? 'fas fa-sun text-lg' : 'fas fa-moon text-lg';
+        if(window.appState.activeTab === 'finances') window.renderCharts();
+    };
+
+    window.openTaskModal = (id = null) => {
+        if(!window.appState.uid) { alert("Atenção: Faça login com o Google para poder cadastrar tarefas!"); return; }
+        window.appState.editingTaskId = id; 
+        document.getElementById('form-task').reset(); 
+        document.getElementById('modal-task-title').textContent = id ? 'Editar Tarefa' : 'Nova Tarefa';
+        if(id) { 
+            const t = window.appState.tasks.find(x => x.id === id); 
+            document.getElementById('task-title').value = t.title || ''; 
+            document.getElementById('task-client').value = t.clientName || ''; 
+            document.getElementById('task-case').value = t.caseNumber || ''; 
+            document.getElementById('task-conf').value = t.confeccaoDate || ''; 
+            document.getElementById('task-fatal').value = t.fatalDate || ''; 
+            document.getElementById('task-complexity').value = t.complexity || 'Media'; 
+            document.getElementById('task-notes').value = t.notes || ''; 
+            const promptEl = document.getElementById('task-prompts');
+            if(promptEl) promptEl.value = t.prompts || ''; 
+        }
+        document.getElementById('modal-task').classList.remove('hidden'); document.getElementById('modal-task').classList.add('flex');
+    };
+    window.closeTaskModal = () => { document.getElementById('modal-task').classList.add('hidden'); document.getElementById('modal-task').classList.remove('flex'); };
+    window.closeDeleteModal = () => { document.getElementById('modal-delete').classList.add('hidden'); document.getElementById('modal-delete').classList.remove('flex'); };
+    window.openSettingsModal = () => { document.getElementById('select-delete-delay').value = window.appState.deleteDelay; document.getElementById('modal-settings').classList.remove('hidden'); document.getElementById('modal-settings').classList.add('flex'); };
+    window.closeSettingsModal = () => { document.getElementById('modal-settings').classList.add('hidden'); document.getElementById('modal-settings').classList.remove('flex'); };
+
+    // 3. NAVEGAÇÃO
+    function renderApp() {
+        ['tasks-view', 'calculator-view', 'finances-view'].forEach(id => document.getElementById(id).classList.add('view-hidden'));
+        document.getElementById('btn-new-task').classList.add('hidden');
+        const subtitle = window.appState.uid ? '<span class="text-green-500 font-bold"><i class="fas fa-check-circle mr-1"></i>Sincronizado na Nuvem</span>' : 'Aguardando Login no Google...';
+        
+        if (window.appState.activeTab === 'calculator') {
+            document.getElementById('calculator-view').classList.remove('view-hidden');
+            document.getElementById('header-title').textContent = 'Calculadora de Prazos';
+            document.getElementById('header-subtitle').innerHTML = 'TJSE 2025/2026';
+        } else if (window.appState.activeTab === 'finances') {
+            document.getElementById('finances-view').classList.remove('view-hidden');
+            document.getElementById('header-title').textContent = 'Finanças Pessoais';
+            document.getElementById('header-subtitle').innerHTML = subtitle;
+            initFinances();
+        } else {
+            document.getElementById('tasks-view').classList.remove('view-hidden');
+            document.getElementById('btn-new-task').classList.remove('hidden');
+            document.getElementById('header-title').textContent = window.appState.activeTab === 'today' ? 'Para Hoje' : window.appState.activeTab === 'week' ? 'Esta Semana' : 'Todas as Tarefas';
+            document.getElementById('header-subtitle').innerHTML = subtitle;
+            window.renderTasksList();
+        }
+        if(window.innerWidth < 768) { document.getElementById('main-sidebar').classList.add('-translate-x-full'); document.getElementById('sidebar-overlay').classList.remove('active'); }
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.onclick = () => {
+            window.appState.activeTab = btn.dataset.tab;
+            document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('bg-brito-accent/10', 'text-brito-accent', 'dark:bg-brito-accent/20'); b.classList.add('text-gray-600', 'dark:text-gray-400'); });
+            btn.classList.add('bg-brito-accent/10', 'text-brito-accent', 'dark:bg-brito-accent/20'); btn.classList.remove('text-gray-600', 'dark:text-gray-400');
+            renderApp();
+        };
+    });
+
+    // 4. FIREBASE AUTH & PERSISTÊNCIA ROBUSTA OFFLINE
+    let db, auth, provider;
+    try {
+        const firebaseConfig = { apiKey: "AIzaSyAM5QFsM6h3by58bYknUOxV53wWN0J5_WA", authDomain: "brito-box.firebaseapp.com", projectId: "brito-box", storageBucket: "brito-box.firebasestorage.app", messagingSenderId: "902367621822", appId: "1:902367621822:web:ed9b88cddd3870d529a4ef" };
+        const app = initializeApp(firebaseConfig);
+        
+        // A Mágica do Offline: O Firestore guarda todos os dados e envios falhos em cache!
+        db = initializeFirestore(app, {
+            localCache: persistentLocalCache({tabManager: persistentSingleTabManager()})
+        });
+        window.db = db;
+        
+        auth = getAuth(app);
+        provider = new GoogleAuthProvider();
+
+        window.loginGoogle = () => {
+            document.getElementById('btn-login').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
+            if (/Mobi|Android/i.test(navigator.userAgent)) { signInWithRedirect(auth, provider); } 
+            else { signInWithPopup(auth, provider).catch(err => { alert("Erro: " + err.message); document.getElementById('btn-login').innerHTML = '<i class="fab fa-google text-red-500 text-sm"></i> Entrar com Google'; }); }
+        };
+        window.logoutGoogle = () => signOut(auth);
+
+        getRedirectResult(auth).catch(err => console.error("Redirect Erro:", err));
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.appState.uid = user.uid;
+                document.getElementById('btn-login').classList.add('hidden');
+                document.getElementById('user-info').classList.remove('hidden');
+                document.getElementById('user-info').classList.add('flex');
+                document.getElementById('user-name').textContent = user.displayName || 'Advogado';
+                document.getElementById('user-avatar').src = user.photoURL || 'https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff';
+
+                // Como a persistência está ativa, isso carrega na hora sem travar
+                onSnapshot(doc(db, "users", window.appState.uid), (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        window.appState.tasks = data.tasks || [];
+                        window.appState.finances = data.finances || { months: [], notes: "" };
+                    } else {
+                        window.appState.tasks = []; window.appState.finances = { months: [], notes: "" };
+                    }
+                    document.getElementById('sync-status').innerHTML = '<i class="fas fa-cloud text-[9px] mr-1 text-green-500"></i>Sincronizado';
+                    renderApp();
+                });
+            } else {
+                window.appState.uid = null;
+                document.getElementById('btn-login').classList.remove('hidden');
+                document.getElementById('btn-login').innerHTML = '<i class="fab fa-google text-red-500 text-sm"></i> Entrar com Google';
+                document.getElementById('user-info').classList.add('hidden');
+                document.getElementById('user-info').classList.remove('flex');
+                renderApp();
+            }
+        });
+    } catch (error) {
+        console.error("Firebase desligado:", error);
+    }
+
+    // SALVAMENTO OTIMISTA (Atualiza tela instantaneamente, Firebase se vira com a internet no fundo)
+    window.saveToCloud = () => {
+        if (!window.appState.uid || !window.db) return alert("Faça login para poder salvar os dados!");
+        
+        // Re-render local rápido (0 travamentos)
+        if (window.appState.activeTab === 'finances') { window.renderFinMonthly(); window.renderCharts(); }
+        else if (window.appState.activeTab !== 'calculator') { window.renderTasksList(); }
+        
+        // Salva na nuvem silencioso. Se você fechar a aba agora, o IndexedDB guarda e envia depois!
+        setDoc(doc(window.db, "users", window.appState.uid), { 
+            tasks: window.appState.tasks, 
+            finances: window.appState.finances 
+        }, { merge: true }).catch(e => console.error("Erro no envio:", e));
+    };
+
+    // 5. TAREFAS LÓGICA (Corrigido cadastro que não funcionava)
+    window.renderTasksList = () => {
+        const list = document.getElementById('tasks-list');
+        if(!window.appState.uid) { list.innerHTML = `<div class="text-center py-20 bg-white dark:bg-[#1A1A1E] rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm"><i class="fas fa-lock text-5xl text-gray-300 dark:text-gray-600 mx-auto mb-4"></i><h3 class="text-lg font-bold text-slate-900 dark:text-white">Faça login para começar</h3></div>`; return; }
+        
+        let filtered = [...window.appState.tasks].sort((a,b) => a.order - b.order);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const nextWeek = new Date(); nextWeek.setDate(nextWeek.getDate() + 7); const weekStr = nextWeek.toISOString().split('T')[0];
+
+        if(window.appState.activeTab === 'today') filtered = filtered.filter(t => (t.fatalDate === todayStr || t.confeccaoDate === todayStr) && t.status !== 'concluida');
+        if(window.appState.activeTab === 'week') filtered = filtered.filter(t => t.fatalDate >= todayStr && t.fatalDate <= weekStr);
+
+        document.getElementById('count-all').textContent = window.appState.tasks.length;
+        const todayCount = window.appState.tasks.filter(t => (t.fatalDate === todayStr || t.confeccaoDate === todayStr) && t.status !== 'concluida').length;
+        const countTodayBadge = document.getElementById('count-today');
+        countTodayBadge.textContent = todayCount;
+        if(todayCount > 0) countTodayBadge.classList.remove('hidden'); else countTodayBadge.classList.add('hidden');
+
+        if(filtered.length === 0) { list.innerHTML = `<div class="text-center py-20 bg-white dark:bg-[#1A1A1E] rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm"><i class="far fa-check-circle text-5xl text-gray-300 dark:text-gray-600 mx-auto mb-4"></i><h3 class="text-lg font-bold text-slate-900 dark:text-white">Tudo limpo por aqui!</h3></div>`; return; }
+
+        list.innerHTML = '';
+        filtered.forEach((task, renderIndex) => {
+            const isConcluida = task.status === 'concluida';
+            let cardClass = '', textClass = '', subtextClass = '', iconClass = '';
+            
+            if (isConcluida) { cardClass = 'bg-gray-50 dark:bg-[#121214] border-gray-200 dark:border-slate-700 opacity-60'; textClass = 'text-gray-500 line-through'; subtextClass = 'text-gray-400'; iconClass = 'text-gray-400 hover:text-gray-600'; }
+            else if (!task.fatalDate) { cardClass = 'bg-brito-accent border-blue-600 shadow-sm'; textClass = 'text-white font-bold'; subtextClass = 'text-blue-100'; iconClass = 'text-blue-200 hover:text-white'; }
+            else {
+                const today = new Date(); today.setHours(0,0,0,0);
+                const fParts = task.fatalDate.split('-'); const fatal = new Date(fParts[0], fParts[1]-1, fParts[2]);
+                const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+
+                if (fatal < today || fatal.getTime() === today.getTime()) { cardClass = 'bg-red-500 border-red-600 shadow-sm'; textClass = 'text-white font-bold'; subtextClass = 'text-red-100'; iconClass = 'text-red-200 hover:text-white'; }
+                else if (fatal.getTime() === tomorrow.getTime()) { cardClass = 'bg-orange-500 border-orange-600 shadow-sm'; textClass = 'text-white font-bold'; subtextClass = 'text-orange-100'; iconClass = 'text-orange-200 hover:text-white'; }
+                else { cardClass = 'bg-white border-gray-200 dark:bg-[#1A1A1E] dark:border-slate-700 shadow-sm'; textClass = 'text-slate-900 dark:text-white'; subtextClass = 'text-gray-500 dark:text-gray-400'; iconClass = 'text-gray-400 hover:text-brito-accent'; }
+            }
+
+            let d2Str = '';
+            if(task.fatalDate) {
+                const d = new Date(task.fatalDate + 'T00:00:00Z');
+                let count = 0; while(count < 2) { d.setUTCDate(d.getUTCDate() - 1); const day = d.getUTCDay(); if(day !== 0 && day !== 6) count++; }
+                d2Str = d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+            }
+
+            let confHTML = '';
+            if(task.confeccaoDate) {
+                const today = new Date(); today.setHours(0,0,0,0);
+                const cParts = task.confeccaoDate.split('-'); const confDate = new Date(cParts[0], cParts[1]-1, cParts[2]);
+                let confStyle = subtextClass, confText = '';
+                if (!isConcluida) {
+                    if (confDate < today) { confStyle = 'text-red-500 dark:text-red-400 font-bold bg-white/90 dark:bg-black/80 px-2 rounded-lg inline-flex max-w-max'; confText = ' (Atrasada)'; }
+                    else if (confDate.getTime() === today.getTime()) { confStyle = 'text-orange-500 dark:text-orange-400 font-bold bg-white/90 dark:bg-black/80 px-2 rounded-lg inline-flex max-w-max'; confText = ' (Hoje)'; }
+                }
+                confHTML = `<div class="flex items-center font-bold text-xs pt-1 ${confStyle}"><i class="fas fa-edit w-3.5 h-3.5 mr-1.5"></i> Confecção: ${formatUIStr(task.confeccaoDate)}${confText}</div>`;
+            }
+
+            const el = document.createElement('div');
+            el.className = `group flex items-stretch p-4 rounded-2xl border transition-all fade-in ${cardClass}`;
+            el.innerHTML = `
+                <div class="flex flex-col items-center justify-center pr-3 md:pr-4 border-r border-black/10 dark:border-white/10 mr-3 md:mr-4 text-black/30 dark:text-white/30"><span class="text-sm font-bold mb-1 ${textClass}">${renderIndex + 1}</span></div>
+                <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-center">
+                    <div class="md:col-span-1 flex justify-start md:justify-center"><button class="btn-toggle w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors z-10 relative ${isConcluida ? 'bg-green-500 border-green-500 text-white' : 'border-black/20 dark:border-white/20 hover:border-brito-accent'}">${isConcluida ? '<i class="fas fa-check text-xs"></i>' : ''}</button></div>
+                    <div class="md:col-span-5"><h3 class="font-bold text-base ${textClass}">${escapeHTML(task.title)}</h3><div class="flex flex-wrap items-center gap-2 mt-1 text-xs ${subtextClass}">${task.clientName ? `<span class="bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded-md font-bold">${escapeHTML(task.clientName)}</span>` : ''}${task.caseNumber ? `<span class="font-mono font-medium">${escapeHTML(task.caseNumber)}</span>` : ''}</div></div>
+                    <div class="md:col-span-4 flex flex-col justify-center space-y-1">${task.fatalDate ? `<div class="flex items-center text-sm font-bold ${textClass}"><i class="far fa-calendar-times w-4 h-4 mr-1.5"></i> Fatal: ${formatUIStr(task.fatalDate)}</div><div class="flex items-center font-bold text-xs ${subtextClass}"><i class="far fa-calendar-check w-3.5 h-3.5 mr-1.5"></i> D-2 (Interno): ${d2Str}</div>` : ''}${confHTML}</div>
+                    <div class="md:col-span-2 flex justify-start md:justify-end space-x-2 mt-2 md:mt-0"><button class="btn-edit p-2 bg-black/5 dark:bg-white/5 rounded-xl transition-colors z-10 relative ${iconClass}"><i class="fas fa-edit"></i></button><button class="btn-delete p-2 bg-black/5 dark:bg-white/5 rounded-xl transition-colors z-10 relative ${iconClass}"><i class="fas fa-trash-alt"></i></button></div>
+                </div>`;
+
+            el.querySelector('.btn-toggle').onclick = () => { task.status = task.status === 'concluida' ? 'pendente' : 'concluida'; task.completedAt = task.status === 'concluida' ? new Date().toISOString() : null; window.saveToCloud(); };
+            el.querySelector('.btn-edit').onclick = () => window.openTaskModal(task.id);
+            el.querySelector('.btn-delete').onclick = () => { window.appState.taskToDeleteId = task.id; document.getElementById('modal-delete').classList.remove('hidden'); document.getElementById('modal-delete').classList.add('flex'); };
+            list.appendChild(el);
+        });
+    }
+
+    // Formulário blindado das tarefas com proteção contra campos ausentes
+    window.saveTask = (e) => {
+        e.preventDefault();
+        const promptEl = document.getElementById('task-prompts');
+        const task = { 
+            id: window.appState.editingTaskId || generateId(), 
+            title: document.getElementById('task-title').value, 
+            clientName: document.getElementById('task-client').value, 
+            caseNumber: document.getElementById('task-case').value, 
+            confeccaoDate: document.getElementById('task-conf').value, 
+            fatalDate: document.getElementById('task-fatal').value, 
+            complexity: document.getElementById('task-complexity').value, 
+            notes: document.getElementById('task-notes').value, 
+            prompts: promptEl ? promptEl.value : '', 
+            status: 'pendente', 
+            order: window.appState.editingTaskId ? window.appState.tasks.find(t => t.id === window.appState.editingTaskId)?.order || 0 : window.appState.tasks.length 
+        };
+        
+        if(window.appState.editingTaskId) { 
+            const idx = window.appState.tasks.findIndex(t => t.id === window.appState.editingTaskId); 
+            if(idx > -1) {
+                task.status = window.appState.tasks[idx].status; 
+                task.completedAt = window.appState.tasks[idx].completedAt; 
+                window.appState.tasks[idx] = task; 
+            }
+        } else { 
+            window.appState.tasks.push(task); 
+        }
+        window.closeTaskModal(); window.saveToCloud();
+    };
+
+    window.executeDelete = () => { if(window.appState.taskToDeleteId) { window.appState.tasks = window.appState.tasks.filter(t => t.id !== window.appState.taskToDeleteId); window.appState.tasks.forEach((t, i) => t.order = i); window.saveToCloud(); } window.closeDeleteModal(); };
+    window.saveSettings = () => { window.appState.deleteDelay = document.getElementById('select-delete-delay').value; localStorage.setItem('brito-delete-delay', window.appState.deleteDelay); window.closeSettingsModal(); window.renderTasksList(); };
+
+    // 6. FINANÇAS LÓGICA (Com formulários blindados)
+    document.querySelectorAll('.fin-nav-btn').forEach(btn => {
+        btn.onclick = () => {
+            window.appState.currentFinTab = btn.dataset.fintab;
+            document.querySelectorAll('.fin-nav-btn').forEach(b => { b.classList.remove('text-brito-accent', 'border-brito-accent', 'font-bold'); b.classList.add('text-gray-500', 'border-transparent', 'font-medium'); });
+            btn.classList.add('text-brito-accent', 'border-brito-accent', 'font-bold'); btn.classList.remove('text-gray-500', 'border-transparent', 'font-medium');
+            ['overview', 'monthly', 'notes'].forEach(id => document.getElementById(`fin-tab-${id}`).classList.add('view-hidden'));
+            document.getElementById(`fin-tab-${window.appState.currentFinTab}`).classList.remove('view-hidden');
+            if (window.appState.currentFinTab === 'overview') window.renderCharts();
+            if (window.appState.currentFinTab === 'monthly') window.renderFinMonthly();
+            if (window.appState.currentFinTab === 'notes') document.getElementById('fin-notes-area').value = window.appState.finances.notes || '';
+        };
+    });
+    document.getElementById('fin-notes-area').addEventListener('input', (e) => { window.appState.finances.notes = e.target.value; window.saveToCloud(); });
+
+    function initFinances() {
+        if(!window.appState.finances.months) window.appState.finances.months = [];
+        if(window.appState.finances.months.length > 0 && !window.appState.currentMonthId) {
+            const sorted = [...window.appState.finances.months].sort((a,b) => b.id.localeCompare(a.id));
+            window.appState.currentMonthId = sorted[0].id;
+        }
+        document.querySelector(`[data-fintab="${window.appState.currentFinTab}"]`).click();
+    }
+
+    window.createNewMonth = () => {
+        const label = prompt("Digite o nome do mês (ex: Julho):"); if(!label) return;
+        const date = new Date(); const rawId = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${Date.now()}`;
+        const newMonth = { id: rawId, label: label, incomes: [], bills: [], receivables: [], installments: [] };
+        if(window.appState.finances.months.length > 0) {
+            const sorted = [...window.appState.finances.months].sort((a,b) => b.id.localeCompare(a.id));
+            const prev = sorted[0];
+            newMonth.incomes = prev.incomes.filter(i => i.isFixed).map(i => ({...i, id: generateId()}));
+            newMonth.bills = prev.bills.filter(b => b.isFixed).map(b => ({...b, id: generateId(), paid: false}));
+            if(prev.installments) prev.installments.forEach(inst => { if (inst.current < inst.total) newMonth.installments.push({ ...inst, id: generateId(), current: inst.current + 1 }); });
+        }
+        window.appState.finances.months.push(newMonth); window.appState.currentMonthId = newMonth.id; window.saveToCloud();
+    };
+
+    window.finDeleteCurrentMonth = () => {
+        if(!confirm("Tem certeza que deseja excluir este mês inteiro?")) return;
+        window.appState.finances.months = window.appState.finances.months.filter(m => m.id !== window.appState.currentMonthId);
+        window.appState.currentMonthId = window.appState.finances.months.length > 0 ? window.appState.finances.months[window.appState.finances.months.length-1].id : null;
+        window.saveToCloud();
+    };
+
+    window.renderFinMonthly = () => {
+        const bar = document.getElementById('fin-months-bar'); bar.innerHTML = '';
+        const sorted = [...window.appState.finances.months].sort((a,b) => a.id.localeCompare(b.id));
+        sorted.forEach(m => {
+            const btn = document.createElement('button');
+            btn.className = `px-3 py-1.5 md:px-4 md:py-2 text-sm font-bold transition-colors border-b-2 whitespace-nowrap rounded-t-lg ${m.id === window.appState.currentMonthId ? 'border-brito-accent text-brito-accent bg-brito-accent/10' : 'border-transparent text-gray-500 hover:text-slate-900 dark:hover:text-white'}`;
+            btn.textContent = m.label; btn.onclick = () => { window.appState.currentMonthId = m.id; window.renderFinMonthly(); }; bar.appendChild(btn);
+        });
+        const addBtn = document.createElement('button'); addBtn.className = "px-3 py-1.5 md:px-4 md:py-2 text-sm font-bold border-b-2 border-transparent text-brito-accent hover:text-brito-accentHover transition-colors whitespace-nowrap"; addBtn.innerHTML = '<i class="fas fa-plus mr-1"></i> Mês'; addBtn.onclick = window.createNewMonth; bar.appendChild(addBtn);
+
+        if(!window.appState.currentMonthId || window.appState.finances.months.length === 0) { document.getElementById('fin-empty-month').classList.remove('view-hidden'); document.getElementById('fin-month-content').classList.add('view-hidden'); return; }
+        document.getElementById('fin-empty-month').classList.add('view-hidden'); document.getElementById('fin-month-content').classList.remove('view-hidden');
+        
+        const mData = window.appState.finances.months.find(m => m.id === window.appState.currentMonthId);
+        if(!mData.receivables) mData.receivables = [];
+        if(!mData.installments) mData.installments = [];
+        document.getElementById('fin-month-title').textContent = `Fatura: ${mData.label}`;
+
+        let totalIn = mData.incomes.reduce((acc, curr) => acc + curr.val, 0);
+        let totalBills = mData.bills.reduce((acc, curr) => acc + curr.val, 0);
+        let totalInst = mData.installments.filter(i => i.current <= i.total).reduce((acc, curr) => acc + curr.val, 0);
+        let totalOut = totalBills + totalInst;
+        let balance = totalIn - totalOut; let uso = totalIn > 0 ? (totalOut / totalIn) * 100 : 0;
+
+        document.getElementById('card-in').textContent = formatBRL(totalIn); document.getElementById('card-out').textContent = formatBRL(totalOut); document.getElementById('card-balance').textContent = formatBRL(balance);
+        document.getElementById('card-balance-border').className = `bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 p-4 rounded-xl shadow-sm border-l-4 ${balance < 0 ? 'border-l-red-500' : 'border-l-brito-accent'}`;
+        document.getElementById('card-usage-text').textContent = `${uso.toFixed(1)}%`; document.getElementById('card-usage-text').className = `font-bold ${uso > 90 ? 'text-red-500' : 'text-slate-900 dark:text-white'}`;
+        document.getElementById('card-usage-bar').style.width = `${Math.min(uso, 100)}%`; document.getElementById('card-usage-bar').className = `h-2 rounded-full transition-all ${uso > 90 ? 'bg-red-500' : 'bg-brito-accent'}`;
+
+        document.getElementById('table-income').querySelector('tbody').innerHTML = mData.incomes.map(i => `<tr><td class="font-bold text-slate-700 dark:text-slate-200"><i class="fas fa-circle text-[6px] text-green-500 mr-2 align-middle"></i>${escapeHTML(i.source)}</td><td class="text-right text-green-600 font-bold">${formatBRL(i.val)}</td><td class="text-center">${i.isFixed ? '<i class="fas fa-check text-brito-accent"></i>' : ''}</td><td class="text-right"><button onclick="window.finDel('inc', '${i.id}')" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash-alt"></i></button></td></tr>`).join(''); document.getElementById('total-income').textContent = formatBRL(totalIn);
+        document.getElementById('table-bills').querySelector('tbody').innerHTML = mData.bills.map(b => `<tr><td class="font-bold text-slate-700 dark:text-slate-200"><i class="fas fa-circle text-[6px] text-red-500 mr-2 align-middle"></i>${escapeHTML(b.name)}</td><td class="text-center">${b.isFixed ? '<i class="fas fa-check text-brito-accent"></i>' : ''}</td><td class="text-right font-bold text-slate-600 dark:text-slate-300">${formatBRL(b.val)}</td><td class="text-right"><button onclick="window.finDel('bill', '${b.id}')" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash-alt"></i></button></td></tr>`).join(''); document.getElementById('total-bills').textContent = formatBRL(totalBills);
+        
+        // A RECEBER
+        document.getElementById('table-rec').querySelector('tbody').innerHTML = mData.receivables.map(r => `<tr class="${r.ok ? 'opacity-50' : ''}"><td class="font-bold text-slate-700 dark:text-slate-200"><div class="text-sm">${escapeHTML(r.who)}</div><div class="text-[10px] text-gray-400 uppercase">${escapeHTML(r.what)}</div></td><td class="text-right font-bold text-slate-600 dark:text-slate-300 ${r.ok ? 'line-through' : ''}">${formatBRL(r.val)}</td><td class="text-center"><button onclick="window.finToggleRec('${r.id}')" class="w-6 h-6 rounded-md border flex items-center justify-center mx-auto ${r.ok ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-300 dark:border-slate-600 text-transparent hover:border-blue-500'}"><i class="fas fa-check text-[10px]"></i></button></td><td class="text-right"><button onclick="window.finDel('rec', '${r.id}')" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash-alt"></i></button></td></tr>`).join('');
+        document.getElementById('total-rec').textContent = formatBRL(mData.receivables.filter(r => !r.ok).reduce((a,c) => a + c.val, 0));
+
+        document.getElementById('table-inst').querySelector('tbody').innerHTML = mData.installments.map(i => { const rest = Math.max(0, (i.total - i.current) * i.val); return `<tr><td class="font-bold text-slate-700 dark:text-slate-200"><div class="text-xs uppercase">${escapeHTML(i.item)}</div><div class="text-[9px] text-gray-400">${escapeHTML(i.card)}</div></td><td class="text-center"><div class="flex items-center justify-center space-x-2 bg-gray-50 dark:bg-[#121214] rounded-lg p-1 border border-gray-200 dark:border-slate-700 inline-flex"><button onclick="window.finAdjInst('${i.id}', -1)" class="w-6 h-6 flex items-center justify-center bg-white dark:bg-[#1A1A1E] rounded-md text-xs hover:bg-gray-100 dark:hover:bg-slate-800 shadow-sm">-</button><span class="text-xs font-mono font-bold w-10 text-center">${i.current}/${i.total}</span><button onclick="window.finAdjInst('${i.id}', 1)" class="w-6 h-6 flex items-center justify-center bg-white dark:bg-[#1A1A1E] rounded-md text-xs hover:bg-gray-100 dark:hover:bg-slate-800 shadow-sm">+</button></div></td><td class="text-right font-bold text-slate-600 dark:text-slate-300">${formatBRL(rest)}<div class="text-[9px] text-gray-400 font-normal">(${formatBRL(i.val)}/mês)</div></td><td class="text-right"><button onclick="window.finDel('inst', '${i.id}')" class="text-gray-400 hover:text-red-500"><i class="fas fa-trash-alt"></i></button></td></tr>`; }).join('');
+        document.getElementById('total-inst').textContent = formatBRL(mData.installments.reduce((acc, curr) => acc + (Math.max(0, curr.total - curr.current) * curr.val), 0));
+
+        window.renderCharts(totalIn, totalOut);
+    };
+
+    window.renderCharts = (inVal = 0, outVal = 0) => {
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? '#334155' : '#e2e8f0'; const textColor = isDark ? '#94a3b8' : '#64748b';
+
+        if(window.appState.currentFinTab === 'overview') {
+            const ctx = document.getElementById('financeLineChart'); if(!ctx) return;
+            const sorted = [...window.appState.finances.months].sort((a,b) => a.id.localeCompare(b.id));
+            const labels = sorted.map(m => m.label); const ins = sorted.map(m => m.incomes.reduce((a,c)=>a+c.val,0)); const outs = sorted.map(m => { const b = m.bills.reduce((a,c)=>a+c.val,0); const i = m.installments ? m.installments.filter(x => x.current <= x.total).reduce((a,c)=>a+c.val,0) : 0; return b + i; });
+            document.getElementById('fin-total-months').textContent = sorted.length; document.getElementById('fin-total-in').textContent = formatBRL(ins.reduce((a,c)=>a+c,0)); document.getElementById('fin-total-out').textContent = formatBRL(outs.reduce((a,c)=>a+c,0)); document.getElementById('fin-total-balance').textContent = formatBRL(ins.reduce((a,c)=>a+c,0) - outs.reduce((a,c)=>a+c,0));
+            if(window.appState.lineChartInstance) window.appState.lineChartInstance.destroy();
+            window.appState.lineChartInstance = new Chart(ctx, { type: 'line', data: { labels: labels.length ? labels : ['Vazio'], datasets: [ { label: 'Entradas', data: ins.length ? ins : [0], borderColor: '#22c55e', backgroundColor: '#22c55e', tension: 0.4, pointRadius: 4, pointBackgroundColor: '#fff' }, { label: 'Saídas', data: outs.length ? outs : [0], borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.4, pointRadius: 4, pointBackgroundColor: '#fff' } ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: textColor, font: { family: 'Inter', weight: 'bold' } } } }, scales: { y: { grid: { color: gridColor }, ticks: { color: textColor, font: {family: 'Inter'} }, beginAtZero: true }, x: { grid: { color: gridColor }, ticks: { color: textColor, font: {family: 'Inter'} } } } } });
+        }
+        if(window.appState.currentFinTab === 'monthly') {
+            const ctx2 = document.getElementById('financeBarChart'); if(!ctx2) return;
+            if(window.appState.barChartInstance) window.appState.barChartInstance.destroy();
+            window.appState.barChartInstance = new Chart(ctx2, { type: 'bar', data: { labels: ['Entrada', 'Saída'], datasets: [{ data: [inVal, outVal], backgroundColor: ['#22c55e', '#ef4444'], borderRadius: 6, barThickness: 50 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: gridColor }, ticks: { color: textColor, font: {family: 'Inter'} }, beginAtZero: true }, x: { grid: { display: false }, ticks: { color: textColor, font: {family: 'Inter', weight: 'bold'} } } } } });
+        }
+    };
+
+    const getCM = () => window.appState.finances.months.find(m => m.id === window.appState.currentMonthId);
+    
+    // Funções Blindadas Inseridas no HTML onsubmit
+    window.finAddIncome = (e) => { e.preventDefault(); const cm = getCM(); if(!cm) return; cm.incomes.push({ id: generateId(), source: document.getElementById('inc-source').value, val: parseFloat(document.getElementById('inc-val').value), isFixed: document.getElementById('inc-fixed').checked }); e.target.reset(); window.saveToCloud(); };
+    window.finAddBill = (e) => { e.preventDefault(); const cm = getCM(); if(!cm) return; cm.bills.push({ id: generateId(), name: document.getElementById('bill-name').value, val: parseFloat(document.getElementById('bill-val').value), isFixed: document.getElementById('bill-fixed').checked, paid: false }); e.target.reset(); window.saveToCloud(); };
+    window.finAddInst = (e) => { e.preventDefault(); const cm = getCM(); if(!cm) return; cm.installments.push({ id: generateId(), item: document.getElementById('inst-item').value, card: document.getElementById('inst-card').value, val: parseFloat(document.getElementById('inst-val').value), current: 1, total: parseInt(document.getElementById('inst-qtd').value) }); e.target.reset(); window.saveToCloud(); };
+    window.finAddRec = (e) => { e.preventDefault(); const cm = getCM(); if(!cm) return; if(!cm.receivables) cm.receivables = []; cm.receivables.push({ id: generateId(), who: document.getElementById('rec-who').value, what: document.getElementById('rec-what').value, val: parseFloat(document.getElementById('rec-val').value), ok: false }); e.target.reset(); window.saveToCloud(); };
+    
+    window.finToggleRec = (id) => { const cm = getCM(); if(!cm) return; const r = cm.receivables.find(x => x.id === id); if(r) { r.ok = !r.ok; window.saveToCloud(); } };
+    window.finDel = (type, id) => { const cm = getCM(); if(!cm) return; if(type==='inc') cm.incomes = cm.incomes.filter(x => x.id !== id); if(type==='bill') cm.bills = cm.bills.filter(x => x.id !== id); if(type==='rec') cm.receivables = cm.receivables.filter(x => x.id !== id); if(type==='inst') cm.installments = cm.installments.filter(x => x.id !== id); window.saveToCloud(); };
+    window.finAdjInst = (id, delta) => { const cm = getCM(); if(!cm) return; const item = cm.installments.find(x => x.id === id); if(item) { item.current += delta; if(item.current < 0) item.current = 0; window.saveToCloud(); } };
+
+    window.calculatePrazoEvent = (e, type) => { e.preventDefault(); window.calculatePrazo(type); };
+
+    // =======================================================
+    // 7. CALCULADORA DE PRAZOS (100% NATIVA E ISOLADA)
+    // =======================================================
+    const calendarData = {
+        '2025-01-01': 3, '2025-01-02': 4, '2025-01-03': 5, '2025-01-04': 6, '2025-01-05': 0, '2025-01-06': 1, '2025-01-07': 2, '2025-01-08': 3, '2025-01-09': 4, '2025-01-10': 5, '2025-01-11': 6, '2025-01-12': 0, '2025-01-13': 1, '2025-01-14': 2, '2025-01-15': 3, '2025-01-16': 4, '2025-01-17': 5, '2025-01-18': 6, '2025-01-19': 0, '2025-01-20': 1, '2025-01-21': 2, '2025-01-22': 3, '2025-01-23': 4, '2025-01-24': 5, '2025-01-25': 6, '2025-01-26': 0, '2025-01-27': 1, '2025-01-28': 2, '2025-01-29': 3, '2025-01-30': 4, '2025-01-31': 5,
+        '2025-02-01': 6, '2025-02-02': 0, '2025-02-03': 1, '2025-02-04': 2, '2025-02-05': 3, '2025-02-06': 4, '2025-02-07': 5, '2025-02-08': 6, '2025-02-09': 0, '2025-02-10': 1, '2025-02-11': 2, '2025-02-12': 3, '2025-02-13': 4, '2025-02-14': 5, '2025-02-15': 6, '2025-02-16': 0, '2025-02-17': 1, '2025-02-18': 2, '2025-02-19': 3, '2025-02-20': 4, '2025-02-21': 5, '2025-02-22': 6, '2025-02-23': 0, '2025-02-24': 1, '2025-02-25': 2, '2025-02-26': 3, '2025-02-27': 4, '2025-02-28': 5,
+        '2025-03-01': 6, '2025-03-02': 0, '2025-03-03': 1, '2025-03-04': 2, '2025-03-05': 3, '2025-03-06': 4, '2025-03-07': 5, '2025-03-08': 6, '2025-03-09': 0, '2025-03-10': 1, '2025-03-11': 2, '2025-03-12': 3, '2025-03-13': 4, '2025-03-14': 5, '2025-03-15': 6, '2025-03-16': 0, '2025-03-17': 1, '2025-03-18': 2, '2025-03-19': 3, '2025-03-20': 4, '2025-03-21': 5, '2025-03-22': 6, '2025-03-23': 0, '2025-03-24': 1, '2025-03-25': 2, '2025-03-26': 3, '2025-03-27': 4, '2025-03-28': 5, '2025-03-29': 6, '2025-03-30': 0, '2025-03-31': 1,
+        '2025-04-01': 2, '2025-04-02': 3, '2025-04-03': 4, '2025-04-04': 5, '2025-04-05': 6, '2025-04-06': 0, '2025-04-07': 1, '2025-04-08': 2, '2025-04-09': 3, '2025-04-10': 4, '2025-04-11': 5, '2025-04-12': 6, '2025-04-13': 0, '2025-04-14': 1, '2025-04-15': 2, '2025-04-16': 3, '2025-04-17': 4, '2025-04-18': 5, '2025-04-19': 6, '2025-04-20': 0, '2025-04-21': 1, '2025-04-22': 2, '2025-04-23': 3, '2025-04-24': 4, '2025-04-25': 5, '2025-04-26': 6, '2025-04-27': 0, '2025-04-28': 1, '2025-04-29': 2, '2025-04-30': 3,
+        '2025-05-01': 4, '2025-05-02': 5, '2025-05-03': 6, '2025-05-04': 0, '2025-05-05': 1, '2025-05-06': 2, '2025-05-07': 3, '2025-05-08': 4, '2025-05-09': 5, '2025-05-10': 6, '2025-05-11': 0, '2025-05-12': 1, '2025-05-13': 2, '2025-05-14': 3, '2025-05-15': 4, '2025-05-16': 5, '2025-05-17': 6, '2025-05-18': 0, '2025-05-19': 1, '2025-05-20': 2, '2025-05-21': 3, '2025-05-22': 4, '2025-05-23': 5, '2025-05-24': 6, '2025-05-25': 0, '2025-05-26': 1, '2025-05-27': 2, '2025-05-28': 3, '2025-05-29': 4, '2025-05-30': 5, '2025-05-31': 6,
+        '2025-06-01': 0, '2025-06-02': 1, '2025-06-03': 2, '2025-06-04': 3, '2025-06-05': 4, '2025-06-06': 5, '2025-06-07': 6, '2025-06-08': 0, '2025-06-09': 1, '2025-06-10': 2, '2025-06-11': 3, '2025-06-12': 4, '2025-06-13': 5, '2025-06-14': 6, '2025-06-15': 0, '2025-06-16': 1, '2025-06-17': 2, '2025-06-18': 3, '2025-06-19': 4, '2025-06-20': 5, '2025-06-21': 6, '2025-06-22': 0, '2025-06-23': 1, '2025-06-24': 2, '2025-06-25': 3, '2025-06-26': 4, '2025-06-27': 5, '2025-06-28': 6, '2025-06-29': 0, '2025-06-30': 1,
+        '2025-07-01': 2, '2025-07-02': 3, '2025-07-03': 4, '2025-07-04': 5, '2025-07-05': 6, '2025-07-06': 0, '2025-07-07': 1, '2025-07-08': 2, '2025-07-09': 3, '2025-07-10': 4, '2025-07-11': 5, '2025-07-12': 6, '2025-07-13': 0, '2025-07-14': 1, '2025-07-15': 2, '2025-07-16': 3, '2025-07-17': 4, '2025-07-18': 5, '2025-07-19': 6, '2025-07-20': 0, '2025-07-21': 1, '2025-07-22': 2, '2025-07-23': 3, '2025-07-24': 4, '2025-07-25': 5, '2025-07-26': 6, '2025-07-27': 0, '2025-07-28': 1, '2025-07-29': 2, '2025-07-30': 3, '2025-07-31': 4,
+        '2025-08-01': 5, '2025-08-02': 6, '2025-08-03': 0, '2025-08-04': 1, '2025-08-05': 2, '2025-08-06': 3, '2025-08-07': 4, '2025-08-08': 5, '2025-08-09': 6, '2025-08-10': 0, '2025-08-11': 1, '2025-08-12': 2, '2025-08-13': 3, '2025-08-14': 4, '2025-08-15': 5, '2025-08-16': 6, '2025-08-17': 0, '2025-08-18': 1, '2025-08-19': 2, '2025-08-20': 3, '2025-08-21': 4, '2025-08-22': 5, '2025-08-23': 6, '2025-08-24': 0, '2025-08-25': 1, '2025-08-26': 2, '2025-08-27': 3, '2025-08-28': 4, '2025-08-29': 5, '2025-08-30': 6, '2025-08-31': 0,
+        '2025-09-01': 1, '2025-09-02': 2, '2025-09-03': 3, '2025-09-04': 4, '2025-09-05': 5, '2025-09-06': 6, '2025-09-07': 0, '2025-09-08': 1, '2025-09-09': 2, '2025-09-10': 3, '2025-09-11': 4, '2025-09-12': 5, '2025-09-13': 6, '2025-09-14': 0, '2025-09-15': 1, '2025-09-16': 2, '2025-09-17': 3, '2025-09-18': 4, '2025-09-19': 5, '2025-09-20': 6, '2025-09-21': 0, '2025-09-22': 1, '2025-09-23': 2, '2025-09-24': 3, '2025-09-25': 4, '2025-09-26': 5, '2025-09-27': 6, '2025-09-28': 0, '2025-09-29': 1, '2025-09-30': 2,
+        '2025-10-01': 3, '2025-10-02': 4, '2025-10-03': 5, '2025-10-04': 6, '2025-10-05': 0, '2025-10-06': 1, '2025-10-07': 2, '2025-10-08': 3, '2025-10-09': 4, '2025-10-10': 5, '2025-10-11': 6, '2025-10-12': 0, '2025-10-13': 1, '2025-10-14': 2, '2025-10-15': 3, '2025-10-16': 4, '2025-10-17': 5, '2025-10-18': 6, '2025-10-19': 0, '2025-10-20': 1, '2025-10-21': 2, '2025-10-22': 3, '2025-10-23': 4, '2025-10-24': 5, '2025-10-25': 6, '2025-10-26': 0, '2025-10-27': 1, '2025-10-28': 2, '2025-10-29': 3, '2025-10-30': 4, '2025-10-31': 5,
+        '2025-11-01': 6, '2025-11-02': 0, '2025-11-03': 1, '2025-11-04': 2, '2025-11-05': 3, '2025-11-06': 4, '2025-11-07': 5, '2025-11-08': 6, '2025-11-09': 0, '2025-11-10': 1, '2025-11-11': 2, '2025-11-12': 3, '2025-11-13': 4, '2025-11-14': 5, '2025-11-15': 6, '2025-11-16': 0, '2025-11-17': 1, '2025-11-18': 2, '2025-11-19': 3, '2025-11-20': 4, '2025-11-21': 5, '2025-11-22': 6, '2025-11-23': 0, '2025-11-24': 1, '2025-11-25': 2, '2025-11-26': 3, '2025-11-27': 4, '2025-11-28': 5, '2025-11-29': 6, '2025-11-30': 0,
+        '2025-12-01': 1, '2025-12-02': 2, '2025-12-03': 3, '2025-12-04': 4, '2025-12-05': 5, '2025-12-06': 6, '2025-12-07': 0, '2025-12-08': 1, '2025-12-09': 2, '2025-12-10': 3, '2025-12-11': 4, '2025-12-12': 5, '2025-12-13': 6, '2025-12-14': 0, '2025-12-15': 1, '2025-12-16': 2, '2025-12-17': 3, '2025-12-18': 4, '2025-12-19': 5, '2025-12-20': 6, '2025-12-21': 0, '2025-12-22': 1, '2025-12-23': 2, '2025-12-24': 3, '2025-12-25': 4, '2025-12-26': 5, '2025-12-27': 6, '2025-12-28': 0, '2025-12-29': 1, '2025-12-30': 2, '2025-12-31': 3,
+        // --- 2026 ---
+        '2026-01-01': 4, '2026-01-02': 5, '2026-01-03': 6, '2026-01-04': 0, '2026-01-05': 1, '2026-01-06': 2, '2026-01-07': 3, '2026-01-08': 4, '2026-01-09': 5, '2026-01-10': 6, '2026-01-11': 0, '2026-01-12': 1, '2026-01-13': 2, '2026-01-14': 3, '2026-01-15': 4, '2026-01-16': 5, '2026-01-17': 6, '2026-01-18': 0, '2026-01-19': 1, '2026-01-20': 2, '2026-01-21': 3, '2026-01-22': 4, '2026-01-23': 5, '2026-01-24': 6, '2026-01-25': 0, '2026-01-26': 1, '2026-01-27': 2, '2026-01-28': 3, '2026-01-29': 4, '2026-01-30': 5, '2026-01-31': 6,
+        '2026-02-01': 0, '2026-02-02': 1, '2026-02-03': 2, '2026-02-04': 3, '2026-02-05': 4, '2026-02-06': 5, '2026-02-07': 6, '2026-02-08': 0, '2026-02-09': 1, '2026-02-10': 2, '2026-02-11': 3, '2026-02-12': 4, '2026-02-13': 5, '2026-02-14': 6, '2026-02-15': 0, '2026-02-16': 1, '2026-02-17': 2, '2026-02-18': 3, '2026-02-19': 4, '2026-02-20': 5, '2026-02-21': 6, '2026-02-22': 0, '2026-02-23': 1, '2026-02-24': 2, '2026-02-25': 3, '2026-02-26': 4, '2026-02-27': 5, '2026-02-28': 6,
+        '2026-03-01': 0, '2026-03-02': 1, '2026-03-03': 2, '2026-03-04': 3, '2026-03-05': 4, '2026-03-06': 5, '2026-03-07': 6, '2026-03-08': 0, '2026-03-09': 1, '2026-03-10': 2, '2026-03-11': 3, '2026-03-12': 4, '2026-03-13': 5, '2026-03-14': 6, '2026-03-15': 0, '2026-03-16': 1, '2026-03-17': 2, '2026-03-18': 3, '2026-03-19': 4, '2026-03-20': 5, '2026-03-21': 6, '2026-03-22': 0, '2026-03-23': 1, '2026-03-24': 2, '2026-03-25': 3, '2026-03-26': 4, '2026-03-27': 5, '2026-03-28': 6, '2026-03-29': 0, '2026-03-30': 1, '2026-03-31': 2,
+        '2026-04-01': 3, '2026-04-02': 4, '2026-04-03': 5, '2026-04-04': 6, '2026-04-05': 0, '2026-04-06': 1, '2026-04-07': 2, '2026-04-08': 3, '2026-04-09': 4, '2026-04-10': 5, '2026-04-11': 6, '2026-04-12': 0, '2026-04-13': 1, '2026-04-14': 2, '2026-04-15': 3, '2026-04-16': 4, '2026-04-17': 5, '2026-04-18': 6, '2026-04-19': 0, '2026-04-20': 1, '2026-04-21': 2, '2026-04-22': 3, '2026-04-23': 4, '2026-04-24': 5, '2026-04-25': 6, '2026-04-26': 0, '2026-04-27': 1, '2026-04-28': 2, '2026-04-29': 3, '2026-04-30': 4,
+        '2026-05-01': 5, '2026-05-02': 6, '2026-05-03': 0, '2026-05-04': 1, '2026-05-05': 2, '2026-05-06': 3, '2026-05-07': 4, '2026-05-08': 5, '2026-05-09': 6, '2026-05-10': 0, '2026-05-11': 1, '2026-05-12': 2, '2026-05-13': 3, '2026-05-14': 4, '2026-05-15': 5, '2026-05-16': 6, '2026-05-17': 0, '2026-05-18': 1, '2026-05-19': 2, '2026-05-20': 3, '2026-05-21': 4, '2026-05-22': 5, '2026-05-23': 6, '2026-05-24': 0, '2026-05-25': 1, '2026-05-26': 2, '2026-05-27': 3, '2026-05-28': 4, '2026-05-29': 5, '2026-05-30': 6, '2026-05-31': 0,
+        '2026-06-01': 1, '2026-06-02': 2, '2026-06-03': 3, '2026-06-04': 4, '2026-06-05': 5, '2026-06-06': 6, '2026-06-07': 0, '2026-06-08': 1, '2026-06-09': 2, '2026-06-10': 3, '2026-06-11': 4, '2026-06-12': 5, '2026-06-13': 6, '2026-06-14': 0, '2026-06-15': 1, '2026-06-16': 2, '2026-06-17': 3, '2026-06-18': 4, '2026-06-19': 5, '2026-06-20': 6, '2026-06-21': 0, '2026-06-22': 1, '2026-06-23': 2, '2026-06-24': 3, '2026-06-25': 4, '2026-06-26': 5, '2026-06-27': 6, '2026-06-28': 0, '2026-06-29': 1, '2026-06-30': 2,
+        '2026-07-01': 3, '2026-07-02': 4, '2026-07-03': 5, '2026-07-04': 6, '2026-07-05': 0, '2026-07-06': 1, '2026-07-07': 2, '2026-07-08': 3, '2026-07-09': 4, '2026-07-10': 5, '2026-07-11': 6, '2026-07-12': 0, '2026-07-13': 1, '2026-07-14': 2, '2026-07-15': 3, '2026-07-16': 4, '2026-07-17': 5, '2026-07-18': 6, '2026-07-19': 0, '2026-07-20': 1, '2026-07-21': 2, '2026-07-22': 3, '2026-07-23': 4, '2026-07-24': 5, '2026-07-25': 6, '2026-07-26': 0, '2026-07-27': 1, '2026-07-28': 2, '2026-07-29': 3, '2026-07-30': 4, '2026-07-31': 5,
+        '2026-08-01': 6, '2026-08-02': 0, '2026-08-03': 1, '2026-08-04': 2, '2026-08-05': 3, '2026-08-06': 4, '2026-08-07': 5, '2026-08-08': 6, '2026-08-09': 0, '2026-08-10': 1, '2026-08-11': 2, '2026-08-12': 3, '2026-08-13': 4, '2026-08-14': 5, '2026-08-15': 6, '2026-08-16': 0, '2026-08-17': 1, '2026-08-18': 2, '2026-08-19': 3, '2026-08-20': 4, '2026-08-21': 5, '2026-08-22': 6, '2026-08-23': 0, '2026-08-24': 1, '2026-08-25': 2, '2026-08-26': 3, '2026-08-27': 4, '2026-08-28': 5, '2026-08-29': 6, '2026-08-30': 0, '2026-08-31': 1,
+        '2026-09-01': 2, '2026-09-02': 3, '2026-09-03': 4, '2026-09-04': 5, '2026-09-05': 6, '2026-09-06': 0, '2026-09-07': 1, '2026-09-08': 2, '2026-09-09': 3, '2026-09-10': 4, '2026-09-11': 5, '2026-09-12': 6, '2026-09-13': 0, '2026-09-14': 1, '2026-09-15': 2, '2026-09-16': 3, '2026-09-17': 4, '2026-09-18': 5, '2026-09-19': 6, '2026-09-20': 0, '2026-09-21': 1, '2026-09-22': 2, '2026-09-23': 3, '2026-09-24': 4, '2026-09-25': 5, '2026-09-26': 6, '2026-09-27': 0, '2026-09-28': 1, '2026-09-29': 2, '2026-09-30': 3,
+        '2026-10-01': 4, '2026-10-02': 5, '2026-10-03': 6, '2026-10-04': 0, '2026-10-05': 1, '2026-10-06': 2, '2026-10-07': 3, '2026-10-08': 4, '2026-10-09': 5, '2026-10-10': 6, '2026-10-11': 0, '2026-10-12': 1, '2026-10-13': 2, '2026-10-14': 3, '2026-10-15': 4, '2026-10-16': 5, '2026-10-17': 6, '2026-10-18': 0, '2026-10-19': 1, '2026-10-20': 2, '2026-10-21': 3, '2026-10-22': 4, '2026-10-23': 5, '2026-10-24': 6, '2026-10-25': 0, '2026-10-26': 1, '2026-10-27': 2, '2026-10-28': 3, '2026-10-29': 4, '2026-10-30': 5, '2026-10-31': 6,
+        '2026-11-01': 0, '2026-11-02': 1, '2026-11-03': 2, '2026-11-04': 3, '2026-11-05': 4, '2026-11-06': 5, '2026-11-07': 6, '2026-11-08': 0, '2026-11-09': 1, '2026-11-10': 2, '2026-11-11': 3, '2026-11-12': 4, '2026-11-13': 5, '2026-11-14': 6, '2026-11-15': 0, '2026-11-16': 1, '2026-11-17': 2, '2026-11-18': 3, '2026-11-19': 4, '2026-11-20': 5, '2026-11-21': 6, '2026-11-22': 0, '2026-11-23': 1, '2026-11-24': 2, '2026-11-25': 3, '2026-11-26': 4, '2026-11-27': 5, '2026-11-28': 6, '2026-11-29': 0, '2026-11-30': 1,
+        '2026-12-01': 2, '2026-12-02': 3, '2026-12-03': 4, '2026-12-04': 5, '2026-12-05': 6, '2026-12-06': 0, '2026-12-07': 1, '2026-12-08': 2, '2026-12-09': 3, '2026-12-10': 4, '2026-12-11': 5, '2026-12-12': 6, '2026-12-13': 0, '2026-12-14': 1, '2026-12-15': 2, '2026-12-16': 3, '2026-12-17': 4, '2026-12-18': 5, '2026-12-19': 6, '2026-12-20': 0, '2026-12-21': 1, '2026-12-22': 2, '2026-12-23': 3, '2026-12-24': 4, '2026-12-25': 5, '2026-12-26': 6, '2026-12-27': 0, '2026-12-28': 1, '2026-12-29': 2, '2026-12-30': 3, '2026-12-31': 4
+    };
+    const weekdaysCalc = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const holidayDetails = {
+        'geral': {
+            '2025-01-01': 'Confraternização Universal', '2025-03-03': 'Ponto Facultativo - Carnaval', '2025-03-04': 'Feriado - Carnaval', '2025-03-05': 'Ponto Facultativo - Cinzas', '2025-04-17': 'Ponto Facultativo - Quinta-feira Santa', '2025-04-18': 'Paixão de Cristo', '2025-04-21': 'Tiradentes', '2025-05-01': 'Dia do Trabalho', '2025-05-02': 'Ponto Facultativo', '2025-06-19': 'Corpus Christi', '2025-06-20': 'Ponto Facultativo', '2025-06-23': 'Ponto Facultativo', '2025-06-24': 'São João', '2025-07-07': 'Ponto Facultativo', '2025-07-08': 'Emancipação de Sergipe', '2025-08-11': 'Dia do Magistrado', '2025-09-07': 'Independência do Brasil', '2025-10-12': 'Nossa Senhora Aparecida', '2025-10-27': 'Ponto Facultativo', '2025-10-28': 'Dia do Funcionário Público', '2025-11-02': 'Finados', '2025-11-15': 'Proclamação da República', '2025-11-20': 'Dia Nacional de Zumbi e da Consciência Negra', '2025-11-21': 'Ponto Facultativo', '2025-12-08': 'Dia da Justiça', '2025-12-25': 'Natal',
+            '2026-01-01': 'Confraternização Universal', '2026-02-16': 'Ponto Facultativo - Carnaval', '2026-02-17': 'Carnaval', '2026-02-18': 'Ponto Facultativo - Quarta-feira de Cinzas', '2026-04-02': 'Ponto Facultativo - Quinta-feira Santa', '2026-04-03': 'Paixão de Cristo', '2026-04-20': 'Ponto Facultativo', '2026-04-21': 'Tiradentes', '2026-05-01': 'Dia do Trabalho', '2026-06-04': 'Corpus Christi', '2026-06-05': 'Ponto Facultativo', '2026-06-24': 'São João', '2026-06-29': 'Ponto Facultativo - São Pedro', '2026-07-08': 'Emancipação de Sergipe', '2026-08-10': 'Ponto Facultativo', '2026-08-11': 'Dia do Magistrado', '2026-09-07': 'Independência do Brasil', '2026-10-12': 'Nossa Senhora Aparecida', '2026-10-30': 'Dia do Funcionário Público', '2026-11-02': 'Finados', '2026-11-15': 'Proclamação da República', '2026-11-20': 'Dia Nacional de Zumbi e da Consciência Negra', '2026-12-07': 'Ponto Facultativo', '2026-12-08': 'Dia da Justiça', '2026-12-25': 'Natal'
+        },
+        'Aracaju': { '2025-03-17': 'Aniversário da Capital', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-03-17': 'Aniversário da Capital', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+        'Aquidabã': { '2025-04-04': 'Emancipação Política', '2025-07-26': 'Padroeira (Sant\'Ana)', '2026-04-04': 'Emancipação Política', '2026-07-26': 'Padroeira (Sant\'Ana)' },
+        'Arauá': { '2025-04-09': 'Emancipação Política', '2025-10-05': 'São Benedito', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-04-09': 'Emancipação Política', '2026-10-05': 'São Benedito', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+        'Areia Branca': { '2025-11-11': 'Fundação da Cidade', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-11-11': 'Fundação da Cidade', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+        'Barra dos Coqueiros': { '2025-11-25': 'Emancipação Política', '2025-12-13': 'Padroeira (Santa Luzia)', '2026-11-25': 'Emancipação Política', '2026-12-13': 'Padroeira (Santa Luzia)' },
+        'Boquim': { '2025-03-21': 'Criação do Município', '2025-07-26': 'Padroeira (Sant\'Ana)', '2026-03-21': 'Criação do Município', '2026-07-26': 'Padroeira (Sant\'Ana)' },
+        'Campo do Brito': { '2025-08-15': 'Padroeira (N. Sra. da Boa Hora)', '2025-08-16': 'Padroeiro (São Roque)', '2025-10-29': 'Emancipação Política', '2026-08-15': 'Padroeira (N. Sra. da Boa Hora)', '2026-08-16': 'Padroeiro (São Roque)', '2026-10-29': 'Emancipação Política' },
+        'Canindé de São Francisco': { '2025-11-25': 'Emancipação Política', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-11-25': 'Emancipação Política', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+        'Capela': { '2025-02-02': 'Padroeiro', '2025-08-28': 'Emancipação Política', '2026-02-02': 'Padroeiro', '2026-08-28': 'Emancipação Política' },
+        'Carira': { '2025-05-03': 'Padroeira (Santa Cruz)', '2025-11-25': 'Emancipação Política', '2026-05-03': 'Padroeira (Santa Cruz)', '2026-11-25': 'Emancipação Política' },
+        'Carmópolis': { '2025-07-16': 'Padroeira (N. Sra. do Carmo)', '2025-10-16': 'Emancipação Política', '2025-11-29': 'Dia do Evangélico', '2026-07-16': 'Padroeira (N. Sra. do Carmo)', '2026-10-16': 'Emancipação Política', '2026-11-29': 'Dia do Evangélico' },
+        'Cedro de São João': { '2025-06-24': 'Padroeiro (São João)', '2025-10-04': 'Emancipação Política', '2026-06-24': 'Padroeiro (São João)', '2026-10-04': 'Emancipação Política' },
+        'Cristinápolis': { '2025-04-24': 'Emancipação Política', '2025-08-01': 'Feriado Municipal Evangélico', '2025-10-04': 'Padroeiro (São Francisco de Assis)', '2026-04-24': 'Emancipação Política', '2026-07-31': 'Feriado Municipal Evangélico', '2026-10-04': 'Padroeiro (São Francisco de Assis)' },
+        'Divina Pastora': { '2025-03-12': 'Emancipação Política', '2025-10-14': 'Padroeira', '2026-03-12': 'Emancipação Política', '2026-10-14': 'Padroeira' },
+        'Estância': { '2025-05-04': 'Aniversário da Cidade', '2025-12-12': 'Padroeira (N. Sra. de Guadalupe)', '2026-05-04': 'Aniversário da Cidade', '2026-12-12': 'Padroeira (N. Sra. de Guadalupe)' },
+        'Frei Paulo': { '2025-06-30': 'Padroeiro (São Paulo)', '2025-10-23': 'Emancipação Política', '2026-06-30': 'Padroeiro (São Paulo)', '2026-10-23': 'Emancipação Política' },
+        'Gararu': { '2025-03-15': 'Emancipação Política', '2025-05-10': 'Festa do Cruzeiro', '2025-08-15': 'Assunção de Nossa Senhora', '2026-03-15': 'Emancipação Política', '2026-05-10': 'Festa do Cruzeiro', '2026-08-15': 'Assunção de Nossa Senhora' },
+        'Indiaroba': { '2025-03-28': 'Emancipação Política', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-03-28': 'Emancipação Política', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+        'Itabaiana': { '2025-01-30': 'Padroeira (N. Sra. do Bom Parto)', '2025-06-13': 'Padroeiro (Santo Antônio)', '2025-08-28': 'Emancipação Política', '2026-01-29': 'Padroeira', '2026-06-13': 'Padroeiro (Santo Antônio)', '2026-08-28': 'Emancipação Política' },
+        'Itabaianinha': { '2025-10-19': 'Emancipação Política', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-10-19': 'Emancipação Política', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+        'Itaporanga D\'Ajuda': { '2025-02-02': 'Padroeira', '2025-03-28': 'Emancipação Política', '2026-02-02': 'Padroeira', '2026-03-28': 'Emancipação Política' },
+        'Japaratuba': { '2025-06-11': 'Emancipação Política', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-06-11': 'Emancipação Política', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+        'Japoatã': { '2025-11-21': 'Padroeira', '2025-11-23': 'Emancipação Política', '2026-11-21': 'Padroeira', '2026-11-23': 'Emancipação Política' },
+        'Lagarto': { '2025-04-20': 'Emancipação Política', '2025-09-08': 'Padroeira (N. Sra. da Piedade)', '2026-04-20': 'Emancipação Política', '2026-09-08': 'Padroeira (N. Sra. da Piedade)' },
+        'Laranjeiras': { '2025-06-27': 'Padroeiro', '2025-08-07': 'Emancipação Política', '2026-06-12': 'Padroeiro', '2026-08-07': 'Emancipação Política' },
+        'Malhador': { '2025-03-19': 'Padroeiro (São José)', '2025-11-25': 'Emancipação Política', '2026-03-19': 'Padroeiro (São José)', '2026-11-25': 'Emancipação Política' },
+        'Maruim': { '2025-01-21': 'Padroeiro', '2025-05-05': 'Emancipação Política', '2025-08-15': 'Co-Padroeira (N. Sra. da Paz)', '2026-01-21': 'Padroeiro', '2026-05-05': 'Emancipação Política', '2026-08-15': 'Co-Padroeira (N. Sra. da Paz)' },
+        'Monte Alegre de Sergipe': { '2025-06-27': 'Padroeiro', '2025-11-25': 'Emancipação Política', '2026-06-12': 'Padroeiro', '2026-11-25': 'Emancipação Política' },
+        'Neópolis': { '2025-06-13': 'Padroeiro (Santo Antônio)', '2025-06-29': 'São Pedro', '2025-10-07': 'Nossa Senhora do Rosário', '2025-10-18': 'Fundação da Cidade', '2026-06-13': 'Padroeiro (Santo Antônio)', '2026-06-29': 'São Pedro', '2026-10-07': 'Nossa Senhora do Rosário', '2026-10-18': 'Fundação da Cidade' },
+        'Nossa Senhora da Glória': { '2025-01-05': 'Festa dos Santos Reis', '2025-08-15': 'Padroeira', '2025-09-26': 'Emancipação Política', '2026-01-05': 'Festa dos Santos Reis', '2026-08-15': 'Padroeira', '2026-09-26': 'Emancipação Política' },
+        'Nossa Senhora das Dores': { '2025-06-11': 'Emancipação Política', '2025-09-15': 'Padroeira', '2025-10-23': 'Aniversário da Cidade', '2026-06-11': 'Emancipação Política', '2026-09-15': 'Padroeira', '2026-10-23': 'Aniversário da Cidade' },
+        'Nossa Senhora do Socorro': { '2025-02-02': 'Padroeira', '2025-07-07': 'Emancipação Política', '2025-08-15': 'N. Sra. do Amparo', '2026-02-02': 'Padroeira', '2026-07-07': 'Emancipação Política', '2026-08-15': 'N. Sra. do Amparo' },
+        'Pacatuba': { '2025-11-20': 'Padroeiro', '2025-11-25': 'Emancipação Política', '2026-11-20': 'Padroeiro', '2026-11-25': 'Emancipação Política' },
+        'Pedrinhas': { '2025-03-19': 'Padroeiro (São José)', '2025-11-25': 'Emancipação Política', '2026-03-19': 'Padroeiro (São José)', '2026-11-25': 'Emancipação Política' },
+        'Pirambu': { '2025-02-11': 'Padroeira', '2025-11-26': 'Emancipação Política', '2026-02-11': 'Padroeira', '2026-11-26': 'Emancipação Política' },
+        'Poço Redondo': { '2025-08-15': 'Padroeira', '2025-11-25': 'Emancipação Política', '2026-08-15': 'Padroeira', '2026-11-25': 'Emancipação Política' },
+        'Poço Verde': { '2025-01-20': 'Padroeiro', '2025-05-03': 'Co-Padroeira', '2025-11-25': 'Emancipação Política', '2026-01-20': 'Padroeiro', '2026-05-03': 'Co-Padroeira', '2026-11-25': 'Emancipação Política' },
+        'Porto da Folha': { '2025-02-19': 'Emancipação Política', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-02-19': 'Emancipação Política', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+        'Propriá': { '2025-02-07': 'Emancipação Política', '2025-06-13': 'Padroeiro (Santo Antônio)', '2026-02-07': 'Emancipação Política', '2026-06-13': 'Padroeiro (Santo Antônio)' },
+        'Riachão do Dantas': { '2025-05-09': 'Emancipação Política', '2025-11-21': 'Padroeira', '2026-05-09': 'Emancipação Política', '2026-11-21': 'Padroeira' },
+        'Riachuelo': { '2025-01-25': 'Emancipação Política', '2025-06-11': 'Batalha Naval de Riachuelo', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-01-25': 'Emancipação Política', '2026-06-11': 'Batalha Naval de Riachuelo', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+        'Ribeirópolis': { '2025-10-26': 'Padroeiro', '2025-12-18': 'Emancipação Política', '2026-10-25': 'Padroeiro', '2026-12-18': 'Emancipação Política' },
+        'Salgado': { '2025-01-22': 'Padroeiro', '2025-10-04': 'Emancipação Política', '2026-01-22': 'Padroeiro', '2026-10-04': 'Emancipação Política' },
+        'Santa Rosa de Lima': {},
+        'Santana do São Francisco': { '2025-04-06': 'Emancipação Política', '2025-07-26': 'Padroeira (Sant\'Ana)', '2026-04-06': 'Emancipação Política', '2026-07-26': 'Padroeira (Sant\'Ana)' },
+        'Santo Amaro das Brotas': { '2025-01-15': 'Padroeiro', '2025-12-15': 'Emancipação Política', '2026-01-15': 'Padroeiro', '2026-12-15': 'Emancipação Política' },
+        'São Cristóvão': { '2025-09-08': 'Padroeira', '2026-09-08': 'Padroeira' },
+        'São Domingos': { '2025-08-08': 'Padroeiro', '2025-10-21': 'Emancipação Política', '2026-08-08': 'Padroeiro', '2026-10-21': 'Emancipação Política' },
+        'Simão Dias': { '2025-06-12': 'Emancipação Política', '2025-07-26': 'Padroeira (Sant\'Ana)', '2026-06-12': 'Emancipação Política', '2026-07-26': 'Padroeira (Sant\'Ana)' },
+        'Tobias Barreto': { '2025-06-07': 'Aniversário de Tobias Barreto', '2025-08-15': 'Padroeira', '2025-10-23': 'Emancipação Política', '2026-06-07': 'Aniversário de Tobias Barreto', '2026-08-15': 'Padroeira', '2026-10-23': 'Emancipação Política' },
+        'Tomar do Geru': {},
+        'Umbaúba': { '2025-02-02': 'Padroeira', '2025-02-06': 'Emancipação Política', '2025-06-13': 'Santo Antônio', '2025-12-12': 'Feriado Municipal Evangélico', '2026-02-02': 'Padroeira', '2026-02-06': 'Emancipação Política', '2026-06-13': 'Santo Antônio', '2026-12-12': 'Feriado Municipal Evangélico' },
+    };
+    const comarcas = Object.keys(holidayDetails).filter(c => c !== 'geral').sort((a, b) => a.localeCompare(b));
+
+    // Carregamento Imediato da Calculadora sem travar por eventos atrasados
+    function initCalculator() {
+        const comarcaOptions = '<option value="geral">Todas as Comarcas (Geral)</option>' + comarcas.map(c => `<option value="${c}">${c}</option>`).join('');
+        document.querySelectorAll('select[id^="comarca-"]').forEach(s => { s.innerHTML = comarcaOptions; s.value = 'Itabaiana'; });
+        const prazoOptions = `<optgroup label="Petições Iniciais e Respostas"><option value="15" selected>Contestação (15 dias)</option><option value="15">Réplica (15 dias)</option></optgroup><optgroup label="Recursos"><option value="15">Apelação / Agravo (15 dias)</option><option value="5">Embargos de Declaração (5 dias)</option><option value="15">Recurso Especial (15 dias)</option></optgroup><optgroup label="Outros"><option value="5">Manifestação (5 dias)</option><option value="10">Manifestação (10 dias)</option><option value="custom">Outro Prazo</option></optgroup>`;
+        document.querySelectorAll('select[id^="prazo-tipo-"]').forEach(s => s.innerHTML = prazoOptions);
+        
+        // Setup de abas da calculadora
+        document.querySelectorAll('.calc-tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.calc-tab-btn').forEach(b => { b.classList.remove('border-brito-accent', 'text-brito-accent'); b.classList.add('border-transparent', 'text-gray-500'); });
+                btn.classList.add('border-brito-accent', 'text-brito-accent'); btn.classList.remove('border-transparent', 'text-gray-500');
+                document.querySelectorAll('.calc-content').forEach(c => c.classList.add('hidden')); document.getElementById(`calc-${btn.dataset.calctab}`).classList.remove('hidden'); document.getElementById(`calc-${btn.dataset.calctab}`).classList.add('block');
+            };
+        });
+
+        ['dje', 'eletronica'].forEach(type => {
+            document.getElementById(`prazo-tipo-${type}`)?.addEventListener('change', (e) => { document.getElementById(`custom-prazo-${type}-wrapper`).style.display = e.target.value === 'custom' ? 'block' : 'none'; });
+        });
+
+        const updateCalcWeekday = (id, targetId) => { const val = document.getElementById(id).value; if(!val) return; const d = new Date(val + 'T00:00:00Z'); const idx = calendarData[val]; document.getElementById(targetId).textContent = idx !== undefined ? weekdaysCalc[idx] : 'Data fora do período'; };
+        document.getElementById('disponibilizacao-date')?.addEventListener('change', () => updateCalcWeekday('disponibilizacao-date', 'disponibilizacao-weekday'));
+        document.getElementById('certificacao-date')?.addEventListener('change', () => updateCalcWeekday('certificacao-date', 'certificacao-weekday'));
+
+        renderApp();
+    }
+    
+    // Executa a inicialização logo no início!
+    initCalculator();
+
+    function isBusinessDayCalc(date, comarca) {
+        const dateString = date.toISOString().slice(0,10); const dayOfWeek = calendarData[dateString];
+        if (dayOfWeek === undefined) return { isWorkDay: false, reason: 'Fora de 2025/2026' };
+        if (dayOfWeek === 0 || dayOfWeek === 6) return { isWorkDay: false, reason: weekdaysCalc[dayOfWeek] };
+        const holidayName = holidayDetails.geral[dateString] || (holidayDetails[comarca] ? holidayDetails[comarca][dateString] : null);
+        if (holidayName) return { isWorkDay: false, reason: holidayName };
+        const year = date.getUTCFullYear(); const month = date.getUTCMonth(); const day = date.getUTCDate();
+        if ((year === 2025 && month === 11 && day >= 20) || (year === 2026 && month === 0 && day <= 20) || (year === 2026 && month === 11 && day >= 20) || (year === 2027 && month === 0 && day <= 20)) return { isWorkDay: false, reason: 'Recesso Forense' };
+        return { isWorkDay: true, reason: 'Dia Útil' };
+    }
+
+    function getNextBusinessDayCalc(startDate, comarca) { let currentDate = new Date(startDate.valueOf()); let timeline = []; while (true) { const check = isBusinessDayCalc(currentDate, comarca); timeline.push({ date: new Date(currentDate.valueOf()), ...check }); if (check.isWorkDay) return { businessDay: currentDate, timeline }; currentDate.setUTCDate(currentDate.getUTCDate() + 1); } }
+    function addBusinessDaysCalc(startDate, days, comarca) { let currentDate = new Date(startDate.valueOf()); let addedDays = 0; let timeline = []; while (addedDays < days) { const check = isBusinessDayCalc(currentDate, comarca); if (check.isWorkDay) addedDays++; timeline.push({ date: new Date(currentDate.valueOf()), ...check }); if (addedDays < days) currentDate.setUTCDate(currentDate.getUTCDate() + 1); } return { finalDate: currentDate, timeline }; }
+    function getPrevBusinessDaysCalc(date, days, comarca) { let currentDate = new Date(date.valueOf()); let subtractedDays = 0; while (subtractedDays < days) { currentDate.setUTCDate(currentDate.getUTCDate() - 1); if (isBusinessDayCalc(currentDate, comarca).isWorkDay) subtractedDays++; } return currentDate; }
+
+    window.calculatePrazo = (type) => {
+        const isDJE = type === 'dje'; const comarca = document.getElementById(`comarca-${type}`).value; const dateInput = document.getElementById(isDJE ? 'disponibilizacao-date' : 'certificacao-date').value; const prazoSelect = document.getElementById(`prazo-tipo-${type}`); let days = parseInt(prazoSelect.value); if(isNaN(days)) days = parseInt(document.getElementById(`custom-prazo-${type}`).value); const prazoNome = prazoSelect.options[prazoSelect.selectedIndex].text;
+        if(!dateInput || !days) return;
+
+        const initialDate = new Date(dateInput + 'T00:00:00Z'); let eventDate, startDate, initialTimeline = [];
+        if (isDJE) {
+            initialTimeline.push({ date: new Date(initialDate), ...isBusinessDayCalc(initialDate, comarca), reason: 'Disponibilização', event: 'Disponibilização' });
+            let d = new Date(initialDate); d.setUTCDate(d.getUTCDate() + 1); const pubResult = getNextBusinessDayCalc(d, comarca); eventDate = pubResult.businessDay;
+            pubResult.timeline.slice(0, -1).forEach(t => initialTimeline.push({...t, event: 'Interstício Disp-Pub'}));
+            initialTimeline.push({ date: new Date(eventDate), ...isBusinessDayCalc(eventDate, comarca), reason: 'Publicação', event: 'Publicação' });
+            let s = new Date(eventDate); s.setUTCDate(s.getUTCDate() + 1); const startResult = getNextBusinessDayCalc(s, comarca); startDate = startResult.businessDay;
+            startResult.timeline.slice(0, -1).forEach(t => initialTimeline.push({...t, event: 'Interstício Pub-Início'}));
+        } else {
+            initialTimeline.push({ date: new Date(initialDate), ...isBusinessDayCalc(initialDate, comarca), reason: 'Certificação', event: 'Certificação' }); eventDate = initialDate;
+            let s = new Date(initialDate); s.setUTCDate(s.getUTCDate() + 1); const startResult = getNextBusinessDayCalc(s, comarca); startDate = startResult.businessDay;
+            startResult.timeline.slice(0, -1).forEach(t => initialTimeline.push({...t, event: 'Interstício Cert-Início'}));
+        }
+
+        const result = addBusinessDaysCalc(startDate, days, comarca); const taskDeadline = getPrevBusinessDaysCalc(result.finalDate, 2, comarca); const fullTimeline = [...initialTimeline, ...result.timeline.map(t => ({...t, event: 'Contagem'}))];
+        window.appState.lastCalculationData = { comarca: comarca, prazoNome: prazoNome, eventLabel: isDJE ? 'Data da Publicação' : 'Data da Certificação', eventDateStr: eventDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }), startDateStr: startDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }), finalDateStr: result.finalDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }), finalDateObj: result.finalDate, taskDateObj: taskDeadline, holidays: result.timeline.filter(t => !t.isWorkDay && t.reason !== 'Fim de Semana').map(t => `${t.date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} - ${t.reason}`) };
+
+        let timelineHTML = ''; let dayCount = 0;
+        fullTimeline.forEach(item => {
+            let statusColor = 'text-gray-400', statusText = item.reason;
+            if (item.event === 'Contagem' && item.isWorkDay) { dayCount++; statusColor = 'text-slate-900 dark:text-white font-bold'; statusText = `${dayCount}º Dia Útil`; } 
+            else if (item.event === 'Disponibilização' || item.event === 'Certificação') { statusColor = 'text-blue-500 font-bold'; statusText = item.event; } 
+            else if (item.event === 'Publicação') { statusColor = 'text-green-500 font-bold'; statusText = 'Data da Publicação'; } 
+            else if (!item.isWorkDay) { statusColor = 'text-red-500'; }
+            timelineHTML += `<li class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-slate-800 last:border-0 hover:bg-gray-50 dark:hover:bg-slate-800/50 px-2 rounded-lg transition-colors"><span class="text-sm text-slate-700 dark:text-slate-300">${item.date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} <span class="text-xs text-gray-400 ml-1">(${weekdaysCalc[calendarData[item.date.toISOString().slice(0,10)]]})</span></span><span class="text-xs font-mono text-right ${statusColor}">${statusText}</span></li>`;
+        });
+
+        document.getElementById(`result-${type}`).innerHTML = `
+            <div class="bg-gray-50 dark:bg-[#121214] border border-gray-200 dark:border-slate-700 rounded-xl p-5 fade-in mt-6 shadow-sm">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-5">
+                    <div><h4 class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Prazo Fatal</h4><p class="text-2xl font-serif font-bold text-slate-900 dark:text-white">${result.finalDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</p></div>
+                    <div class="mt-4 md:mt-0 text-left md:text-right"><p class="text-sm text-gray-500">Início: <strong class="text-slate-900 dark:text-white">${startDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</strong></p><p class="text-xs mt-1 text-gray-500">Sugestão (D-2): <strong class="text-brito-accent">${taskDeadline.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</strong></p></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                    <button type="button" onclick="window.addGoogleCalendar('task')" class="bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold py-2.5 px-3 rounded-lg shadow-sm transition-colors"><i class="far fa-calendar-check text-brito-accent mr-1"></i> Agendar (D-2)</button>
+                    <button type="button" onclick="window.addGoogleCalendar('fatal')" class="bg-white dark:bg-[#1A1A1E] border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold py-2.5 px-3 rounded-lg shadow-sm transition-colors"><i class="far fa-calendar-times text-red-500 mr-1"></i> Agendar Fatal</button>
+                </div>
+                <button type="button" onclick="window.openCertidaoModal()" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold py-2.5 px-4 rounded-lg shadow-sm transition-colors mb-4"><i class="fas fa-file-contract mr-2"></i> Gerar Certidão Visual</button>
+                <details class="group"><summary class="flex items-center text-xs font-bold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-brito-accent select-none"><i class="fas fa-chevron-right mr-2 transform group-open:rotate-90 transition-transform duration-200"></i> Memória de Cálculo Detalhada</summary><ul class="mt-3 pl-2 max-h-64 overflow-y-auto custom-scrollbar">${timelineHTML}</ul></details>
+            </div>
+        `;
+    };
+
+    window.addGoogleCalendar = (type) => {
+        const data = window.appState.lastCalculationData; if (!data) return;
+        const desc = `Calculadora de Prazos TJSE\nComarca: ${data.comarca}\nTipo: ${data.prazoNome}\n${data.eventLabel}: ${data.eventDateStr}\nInício da Contagem: ${data.startDateStr}\nPrazo Fatal: ${data.finalDateStr}`.trim();
+        const title = type === 'task' ? `TAREFA: ${data.comarca}` : `FATAL: ${data.comarca}`; const dateObj = type === 'task' ? data.taskDateObj : data.finalDateObj; const details = type === 'task' ? `ALERTA DE PRAZO INTERNO (D-2)\n\n${desc}` : `VENCIMENTO DO PRAZO\n\n${desc}`;
+        const start = dateObj.toISOString().replace(/-|:|\.\d+/g, "").slice(0, 8); let nd = new Date(dateObj); nd.setUTCDate(nd.getUTCDate() + 1); const end = nd.toISOString().replace(/-|:|\.\d+/g, "").slice(0, 8);
+        window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(details)}`, '_blank');
+    };
+
+    window.openCertidaoModal = () => {
+        const data = window.appState.lastCalculationData; if(!data) return;
+        document.getElementById('cert-comarca').textContent = data.comarca; document.getElementById('cert-evento-tipo').textContent = data.eventLabel; document.getElementById('cert-data-evento').textContent = data.eventDateStr; document.getElementById('cert-inicio-contagem').textContent = data.startDateStr; document.getElementById('cert-data-fatal').textContent = data.finalDateStr;
+        const list = document.getElementById('cert-feriados-list'); list.innerHTML = '';
+        if(data.holidays.length > 0) { data.holidays.forEach(h => { const li = document.createElement('li'); li.textContent = h; list.appendChild(li); }); } else { list.innerHTML = '<li>Sem suspensões no período.</li>'; }
+        document.getElementById('certidao-modal').classList.remove('hidden'); document.getElementById('certidao-modal').classList.add('flex');
+    };
+    window.closeCertidaoModal = () => { document.getElementById('certidao-modal').classList.add('hidden'); document.getElementById('certidao-modal').classList.remove('flex'); };
+</script>
+</body>
+</html>
