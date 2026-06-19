@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brito Box</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    },
+                    colors: {
+                        brito: {
+                            bgLight: '#f8fafc',
+                            bgDark: '#0f172a',
+                            accent: '#3b82f6',
+                            accentHover: '#2563eb',
+                            paper: '#fffdf5',
+                            justice: { 50: '#f0f4f8', 600: '#486581', 700: '#334e68', 800: '#243b53', 900: '#102a43' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body { transition: background-color 0.3s, color 0.3s; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #334155; }
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .drag-over { border-top: 2px solid #3b82f6 !important; border-bottom: 2px solid #3b82f6 !important; transform: scale(1.01); transition: all 0.2s; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .view-hidden { display: none !important; }
+    </style>
+</head>
+<body class="bg-brito-bgLight text-slate-800 dark:bg-brito-bgDark dark:text-slate-200 min-h-screen">
+    
+    <div class="flex h-screen overflow-hidden">
+        <!-- Menu Lateral -->
+        <aside class="w-64 bg-white dark:bg-[#1A1A1E] border-r border-gray-200 dark:border-slate-800 flex flex-col shrink-0 transition-colors z-20">
+            
+            <!-- HEADER DO MENU COM LOGIN -->
+            <div class="p-6 border-b border-gray-200 dark:border-slate-800">
+                <div class="flex justify-between items-center mb-5">
+                    <h1 class="text-2xl font-serif font-bold text-slate-900 dark:text-white tracking-tight">Brito Box</h1>
+                    <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-slate-500">
+                        <i id="theme-icon" class="fas fa-moon text-lg"></i>
+                    </button>
+                </div>
+                
+                <!-- Área de Autenticação -->
+                <div id="auth-section" class="flex flex-col">
+                    <button id="btn-login" onclick="window.loginGoogle()" class="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-slate-700 dark:text-white text-xs font-bold py-2.5 px-3 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-center gap-2 transition-colors">
+                        <i class="fab fa-google text-red-500 text-sm"></i> Entrar com Google
+                    </button>
+                    
+                    <div id="user-info" class="hidden flex-col bg-gray-50 dark:bg-slate-800/50 p-3 rounded-lg border border-gray-100 dark:border-slate-700">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <img id="user-avatar" class="w-8 h-8 rounded-full border border-gray-200 dark:border-slate-600" src="" alt="Avatar">
+                            <div class="overflow-hidden">
+                                <p id="user-name" class="text-xs font-bold text-slate-900 dark:text-white truncate">Nome</p>
+                                <p class="text-[10px] text-green-600 dark:text-green-400 font-medium"><i class="fas fa-cloud text-[9px] mr-1"></i>Sincronizado</p>
+                            </div>
+                        </div>
+                        <button onclick="window.logoutGoogle()" class="text-xs text-gray-500 hover:text-red-500 text-left font-medium transition-colors"><i class="fas fa-sign-out-alt mr-1"></i>Sair da conta</button>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-2">Tarefas</div>
+                
+                <button class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors bg-brito-accent/10 text-brito-accent dark:bg-brito-accent/20" data-tab="all">
+                    <div class="flex items-center space-x-3"><i class="fas fa-home w-5 text-center"></i><span class="font-medium text-sm">Todas</span></div>
+                    <span id="count-all" class="text-xs bg-gray-100 dark:bg-slate-800 py-1 px-2 rounded-full">0</span>
+                </button>
+                
+                <button class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800" data-tab="today">
+                    <div class="flex items-center space-x-3"><i class="far fa-calendar w-5 text-center"></i><span class="font-medium text-sm">Para Hoje</span></div>
+                    <span id="count-today" class="text-xs bg-gray-100 dark:bg-slate-800 py-1 px-2 rounded-full text-red-500 font-bold hidden">0</span>
+                </button>
+
+                <button class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800" data-tab="week">
+                    <div class="flex items-center space-x-3"><i class="far fa-calendar-alt w-5 text-center"></i><span class="font-medium text-sm">Esta Semana</span></div>
+                </button>
+
+                <div class="mt-8 mb-2 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Ferramentas</div>
+                
+                <button class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800" data-tab="calculator">
+                    <i class="fas fa-calculator w-5 text-center"></i><span class="font-medium text-sm">Calculadora TJSE</span>
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-gray-200 dark:border-slate-800">
+                <button onclick="window.openSettingsModal()" class="w-full flex items-center space-x-3 px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                    <i class="fas fa-cog w-5 text-center"></i><span class="font-medium text-sm">Configurações</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Área Principal -->
+        <main class="flex-1 flex flex-col bg-brito-bgLight dark:bg-brito-bgDark transition-colors relative">
+            <header class="bg-brito-bgLight dark:bg-brito-bgDark border-b border-gray-200 dark:border-slate-800 px-8 py-5 flex justify-between items-center sticky top-0 z-10">
+                <div>
+                    <h1 id="header-title" class="text-2xl font-bold text-slate-900 dark:text-white">Todas as Tarefas</h1>
+                    <p id="header-subtitle" class="text-sm text-gray-500 dark:text-gray-400 mt-1">Carregando...</p>
+                </div>
+                <!-- Botão Nova Tarefa com z-index alto para não ser bloqueado -->
+                <button id="btn-new-task" onclick="window.openTaskModal()" class="px-5 py-2.5 bg-brito-accent hover:bg-brito-accentHover text-white text-sm font-medium rounded-xl transition-colors shadow-md flex items-center space-x-2 relative z-50">
+                    <i class="fas fa-plus"></i><span>Nova Tarefa</span>
+                </button>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar relative z-0">
+                
+                <!-- VIEW DAS TAREFAS -->
+                <div id="tasks-view" class="space-y-3 max-w-5xl mx-auto pb-20 fade-in">
+                    <div id="tasks-list"></div>
+                </div>
+
+                <!-- VIEW DA CALCULADORA -->
+                <div id="calculator-view" class="max-w-3xl mx-auto w-full pb-10 fade-in view-hidden">
+                    <div class="bg-brito-paper dark:bg-neutral-800 p-6 md:p-10 rounded-xl shadow-2xl border-t-4 border-brito-justice-800 dark:border-neutral-500 transition-all">
+                        <header class="text-center mb-10">
+                            <h2 class="text-3xl md:text-4xl font-serif font-bold text-brito-justice-900 dark:text-white mb-2 tracking-tight">Calculadora de Prazos</h2>
+                            <div class="h-1 w-24 bg-brito-justice-600/20 dark:bg-neutral-600 mx-auto rounded-full mb-3"></div>
+                            <p class="text-gray-500 dark:text-neutral-400 text-sm font-medium uppercase tracking-wide">TJSE • CPC • 2025/2026</p>
+                        </header>
+
+                        <div class="mb-8 border-b border-gray-200 dark:border-neutral-700">
+                            <nav class="flex space-x-8" aria-label="Tabs">
+                                <button class="calc-tab-btn pb-4 px-1 border-b-2 font-medium text-sm transition-all border-brito-justice-600 text-brito-justice-700 dark:border-neutral-300 dark:text-neutral-200" data-calctab="dje">
+                                    Diário da Justiça
+                                </button>
+                                <button class="calc-tab-btn pb-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-brito-justice-700 hover:border-brito-justice-600 dark:text-neutral-400 dark:hover:text-neutral-200 transition-all" data-calctab="eletronica">
+                                    Intimação Eletrônica
+                                </button>
+                            </nav>
+                        </div>
+
+                        <div class="space-y-6">
+                            <!-- DJE Form -->
+                            <div id="calc-dje" class="calc-content block">
+                                <form id="form-dje" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="col-span-1 md:col-span-2 space-y-1">
+                                        <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Comarca</label>
+                                        <select id="comarca-dje" class="w-full bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white rounded px-3 py-3 focus:ring-2 focus:ring-brito-justice-600 outline-none transition-shadow appearance-none"></select>
+                                    </div>
+                                    <div class="col-span-1 md:col-span-2 space-y-1">
+                                        <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Tipo de Prazo</label>
+                                        <select id="prazo-tipo-dje" class="w-full bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white rounded px-3 py-3 focus:ring-2 focus:ring-brito-justice-600 outline-none transition-shadow appearance-none"></select>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Disponibilização</label>
+                                        <input type="date" id="disponibilizacao-date" class="w-full bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white rounded px-3 py-2.5 focus:ring-2 focus:ring-brito-justice-600 outline-none" required>
+                                        <p id="disponibilizacao-weekday" class="text-xs text-brito-justice-700 dark:text-neutral-300 font-medium mt-1 h-4"></p>
+                                    </div>
+                                    <div id="custom-prazo-dje-wrapper" style="display: none;" class="space-y-1">
+                                        <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Dias Úteis</label>
+                                        <input type="number" id="custom-prazo-dje" min="1" class="w-full bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white rounded px-3 py-2.5 focus:ring-2 focus:ring-brito-justice-600 outline-none">
+                                    </div>
+                                    <div class="col-span-1 md:col-span-2 pt-2">
+                                        <button type="submit" class="w-full bg-brito-justice-800 hover:bg-brito-justice-900 dark:bg-neutral-600 dark:hover:bg-neutral-500 text-white font-serif font-bold py-3.5 px-4 rounded shadow-md transition-all transform active:scale-[0.99]">Calcular Prazo</button>
+                                    </div>
+                                </form>
+                                <div id="result-dje" class="mt-8"></div>
+                            </div>
+
+                            <!-- Eletronica Form -->
+                            <div id="calc-eletronica" class="calc-content hidden">
+                                <form id="form-eletronica" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="col-span-1 md:col-span-2 space-y-1">
+                                        <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Comarca</label>
+                                        <select id="comarca-eletronica" class="w-full bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white rounded px-3 py-3 focus:ring-2 focus:ring-brito-justice-600 outline-none transition-shadow appearance-none"></select>
+                                    </div>
+                                    <div class="col-span-1 md:col-span-2 space-y-1">
+                                        <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Tipo de Prazo</label>
+                                        <select id="prazo-tipo-eletronica" class="w-full bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white rounded px-3 py-3 focus:ring-2 focus:ring-brito-justice-600 outline-none transition-shadow appearance-none"></select>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Data da Certificação</label>
+                                        <input type="date" id="certificacao-date" class="w-full bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white rounded px-3 py-2.5 focus:ring-2 focus:ring-brito-justice-600 outline-none" required>
+                                        <p id="certificacao-weekday" class="text-xs text-brito-justice-700 dark:text-neutral-300 font-medium mt-1 h-4"></p>
+                                    </div>
+                                    <div id="custom-prazo-eletronica-wrapper" style="display: none;" class="space-y-1">
+                                        <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Dias Úteis</label>
+                                        <input type="number" id="custom-prazo-eletronica" min="1" class="w-full bg-white dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 text-gray-900 dark:text-white rounded px-3 py-2.5 focus:ring-2 focus:ring-brito-justice-600 outline-none">
+                                    </div>
+                                    <div class="col-span-1 md:col-span-2 pt-2">
+                                        <button type="submit" class="w-full bg-brito-justice-800 hover:bg-brito-justice-900 dark:bg-neutral-600 dark:hover:bg-neutral-500 text-white font-serif font-bold py-3.5 px-4 rounded shadow-md transition-all transform active:scale-[0.99]">Calcular Prazo</button>
+                                    </div>
+                                </form>
+                                <div id="result-eletronica" class="mt-8"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAIS DO SISTEMA -->
+
+    <!-- Modal Nova/Editar Tarefa -->
+    <div id="modal-task" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50 backdrop-blur-sm fade-in">
+        <div class="bg-white dark:bg-[#1A1A1E] w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/30">
+                <h2 id="modal-task-title" class="text-xl font-bold text-slate-900 dark:text-white">Nova Tarefa</h2>
+                <button onclick="window.closeTaskModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <form id="form-task" class="p-6 overflow-y-auto custom-scrollbar space-y-5">
+                <input type="hidden" id="task-id">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Título / Peça *</label>
+                    <input required id="task-title" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none" placeholder="Ex: Apelação Cível">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Cliente</label>
+                        <input id="task-client" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none" placeholder="Nome do Cliente">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nº Processo</label>
+                        <input id="task-case" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-brito-accent outline-none" placeholder="0000000-00.0000">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Data de Confecção</label>
+                        <input type="date" id="task-conf" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Prazo Fatal</label>
+                        <input type="date" id="task-fatal" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Complexidade</label>
+                        <select id="task-complexity" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none">
+                            <option value="Baixa">Baixa (Rápido)</option>
+                            <option value="Media" selected>Média</option>
+                            <option value="Alta">Alta (Demorado)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Observações</label>
+                    <textarea id="task-notes" rows="3" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none resize-none" placeholder="Detalhes..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-brito-accent uppercase tracking-wider mb-1">Prompts / IA Base</label>
+                    <textarea id="task-prompts" rows="3" class="w-full bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none resize-none" placeholder="Cole aqui os prompts que usará para IA..."></textarea>
+                </div>
+                <div class="pt-4 flex justify-end space-x-3">
+                    <button type="button" onclick="window.closeTaskModal()" class="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">Cancelar</button>
+                    <button type="submit" class="px-5 py-2.5 text-sm font-medium text-white bg-brito-accent hover:bg-brito-accentHover rounded-lg transition-colors shadow-sm">Salvar Tarefa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Excluir -->
+    <div id="modal-delete" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm fade-in">
+        <div class="bg-white dark:bg-[#1A1A1E] w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center border border-gray-200 dark:border-slate-700">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4"><i class="fas fa-trash-alt h-6 w-6 text-red-600 dark:text-red-400"></i></div>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Excluir Tarefa?</h3>
+            <p id="delete-task-name" class="text-sm text-gray-500 dark:text-gray-400 mb-6">Tem certeza que deseja excluir esta tarefa?</p>
+            <div class="flex justify-center space-x-3">
+                <button onclick="window.closeDeleteModal()" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="window.executeDelete()" class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm">Sim, Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Configurações -->
+    <div id="modal-settings" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50 backdrop-blur-sm fade-in">
+        <div class="bg-white dark:bg-[#1A1A1E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/30">
+                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Configurações</h2>
+                <button onclick="window.closeSettingsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-slate-900 dark:text-white mb-2">Limpeza de Tarefas Concluídas</label>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">Escolha quando tarefas concluídas devem sumir da lista.</p>
+                    <select id="select-delete-delay" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none">
+                        <option value="0">Imediatamente</option>
+                        <option value="1">Após 1 dia</option>
+                        <option value="3">Após 3 dias</option>
+                        <option value="7">Após 7 dias</option>
+                        <option value="never">Nunca (Manter para sempre)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="p-4 bg-gray-50 dark:bg-slate-800/30 border-t border-gray-100 dark:border-slate-800 flex justify-end">
+                <button onclick="window.saveSettings()" class="px-5 py-2 text-sm font-medium text-white bg-brito-accent hover:bg-brito-accentHover rounded-lg transition-colors shadow-sm">Concluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Certidão Calculadora -->
+    <div id="certidao-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 fade-in">
+        <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full overflow-hidden">
+            <div class="flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50">
+                <h3 class="text-sm font-bold uppercase text-gray-500 tracking-wider">Certidão Visual</h3>
+                <button onclick="window.closeCertidaoModal()" class="text-gray-400 hover:text-gray-600 transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-8 bg-brito-paper text-black">
+                <div class="border-l-4 border-black pl-5 py-1 mb-6">
+                    <h2 class="text-2xl font-serif font-bold text-black leading-tight">Certidão de Tempestividade</h2>
+                    <p class="text-sm text-gray-600 font-serif italic mt-1">Memória de Cálculo Processual</p>
+                </div>
+                <div class="space-y-3 font-serif text-sm leading-relaxed">
+                    <div class="flex justify-between border-b border-gray-200 pb-2"><span class="font-bold text-gray-700">Comarca:</span><span id="cert-comarca"></span></div>
+                    <div class="flex justify-between border-b border-gray-200 pb-2"><span class="font-bold text-gray-700">Evento Inicial:</span><span id="cert-evento-tipo"></span></div>
+                    <div class="flex justify-between border-b border-gray-200 pb-2"><span class="font-bold text-gray-700">Data do Evento:</span><span id="cert-data-evento" class="font-medium"></span></div>
+                    <div class="flex justify-between border-b border-gray-200 pb-2"><span class="font-bold text-gray-700">Início da Contagem:</span><span id="cert-inicio-contagem" class="font-medium"></span></div>
+                    <div class="py-2">
+                        <span class="font-bold text-gray-700 block mb-1">Ocorrências (Feriados/Suspensões):</span>
+                        <ul id="cert-feriados-list" class="list-disc pl-5 text-gray-600 text-xs space-y-1"></ul>
+                    </div>
+                    <div class="mt-6 pt-4 border-t-2 border-slate-800 flex justify-between items-end">
+                        <span class="font-bold text-lg uppercase tracking-wide">Prazo Fatal:</span>
+                        <span id="cert-data-fatal" class="text-3xl font-bold font-serif"></span>
+                    </div>
+                </div>
+                <div class="mt-8 text-center"><p class="text-[10px] text-gray-400 uppercase tracking-widest">Brito Box • TJSE 2025/2026</p></div>
+            </div>
+            <div class="p-4 bg-gray-50 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center text-center">
+                <span class="text-xs text-gray-500 mb-2 md:mb-0">Tire um print (Win+Shift+S) da área amarelada.</span>
+                <button onclick="window.closeCertidaoModal()" class="px-4 py-2 bg-white border border-gray-300 rounded text-sm font-medium hover:bg-gray-100 text-gray-700 w-full md:w-auto">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- SCRIPT COM FIREBASE (LOGIN DO GOOGLE) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        // ==========================================
+        // 1. CONFIGURAÇÃO DO SEU FIREBASE
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAM5QFsM6h3by58bYknUOxV53wWN0J5_WA",
+            authDomain: "brito-box.firebaseapp.com",
+            projectId: "brito-box",
+            storageBucket: "brito-box.firebasestorage.app",
+            messagingSenderId: "902367621822",
+            appId: "1:902367621822:web:ed9b88cddd3870d529a4ef",
+            measurementId: "G-13DSPXGJZ5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // ==========================================
+        // 2. VARIÁVEIS DE ESTADO
+        // ==========================================
+        let tasks = [];
+        let uid = null;
+        let activeTab = 'all';
+        let deleteDelay = localStorage.getItem('brito-delete-delay') || '0';
+        let editingTaskId = null;
+        let taskToDeleteId = null;
+        let draggedItemIndex = null;
+        let unsubscribeSnapshot = null;
+        
+        // ==========================================
+        // 3. TEMA DARK/LIGHT
+        // ==========================================
+        const themeBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const html = document.documentElement;
+
+        let theme = localStorage.getItem('brito-theme') || 'light';
+        if (theme === 'dark') { html.classList.add('dark'); themeIcon.className = 'fas fa-sun text-lg'; }
+
+        themeBtn.onclick = () => {
+            html.classList.toggle('dark');
+            theme = html.classList.contains('dark') ? 'dark' : 'light';
+            localStorage.setItem('brito-theme', theme);
+            themeIcon.className = theme === 'dark' ? 'fas fa-sun text-lg' : 'fas fa-moon text-lg';
+        };
+
+        // ==========================================
+        // 4. LÓGICA DE NUVEM (FIREBASE + GOOGLE)
+        // ==========================================
+        
+        // Fica observando se o usuário está logado ou não
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // USUÁRIO LOGADO
+                uid = user.uid;
+                
+                // Arruma a interface
+                document.getElementById('btn-login').classList.add('hidden');
+                document.getElementById('user-info').classList.remove('hidden');
+                document.getElementById('user-info').classList.add('flex');
+                document.getElementById('user-name').textContent = user.displayName || user.email;
+                document.getElementById('user-avatar').src = user.photoURL || 'https://ui-avatars.com/api/?name=User&background=3b82f6&color=fff';
+                document.getElementById('header-subtitle').textContent = `Sincronizado na Nuvem`;
+
+                // Ouve mudanças do Firebase em tempo real
+                unsubscribeSnapshot = onSnapshot(doc(db, "users", uid), (docSnap) => {
+                    if (docSnap.exists()) {
+                        tasks = docSnap.data().tasks || [];
+                    } else {
+                        tasks = [];
+                    }
+                    renderSidebarCounts();
+                    if (activeTab !== 'calculator') renderTasks();
+                });
+            } else {
+                // USUÁRIO DESLOGADO
+                uid = null;
+                tasks = []; // Limpa a tela
+                if(unsubscribeSnapshot) unsubscribeSnapshot(); // Para de ouvir o banco de dados
+                
+                // Arruma a interface
+                document.getElementById('btn-login').classList.remove('hidden');
+                document.getElementById('user-info').classList.add('hidden');
+                document.getElementById('user-info').classList.remove('flex');
+                document.getElementById('header-subtitle').textContent = `Faça login com o Google para ver suas tarefas`;
+                
+                renderSidebarCounts();
+                if (activeTab !== 'calculator') renderTasks();
+            }
+        });
+
+        // Funções atreladas aos botões
+        window.loginGoogle = () => {
+            signInWithPopup(auth, provider).catch(error => {
+                console.error("Erro no login:", error);
+                alert("Erro ao fazer login: " + error.message);
+            });
+        };
+
+        window.logoutGoogle = () => {
+            signOut(auth);
+        };
+
+        function saveTasksToCloud() {
+            if (uid) {
+                setDoc(doc(db, "users", uid), { tasks: tasks }, { merge: true });
+            } else {
+                alert("Você precisa fazer login para salvar as tarefas!");
+            }
+        }
+
+        // ==========================================
+        // 5. FUNÇÕES DE TAREFAS E UI
+        // ==========================================
+        const escapeHTML = (str) => {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[tag] || tag));
+        };
+
+        const formatUIStr = (dateStr) => {
+            if (!dateStr) return '';
+            const [y, m, d] = dateStr.split('-');
+            return `${d}/${m}/${y}`;
+        };
+
+        function cleanupTasks() {
+            if (deleteDelay === 'never') return;
+            const delayDays = parseInt(deleteDelay);
+            const now = new Date().getTime();
+            let changed = false;
+            tasks = tasks.filter(t => {
+                if (t.status === 'concluida' && t.completedAt) {
+                    const diff = (now - new Date(t.completedAt).getTime()) / (1000 * 3600 * 24);
+                    if (diff >= delayDays) { changed = true; return false; }
+                }
+                return true;
+            });
+            if (changed) {
+                tasks.forEach((t, i) => t.order = i);
+                saveTasksToCloud();
+            }
+        }
+
+        function renderSidebarCounts() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const allCount = tasks.length;
+            const todayCount = tasks.filter(t => (t.fatalDate === todayStr || t.confeccaoDate === todayStr) && t.status !== 'concluida').length;
+            
+            document.getElementById('count-all').textContent = allCount;
+            document.getElementById('count-today').textContent = todayCount;
+            
+            if(todayCount > 0) document.getElementById('count-today').classList.remove('hidden');
+            else document.getElementById('count-today').classList.add('hidden');
+        }
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.onclick = () => {
+                const tabId = btn.dataset.tab;
+                activeTab = tabId;
+                
+                document.querySelectorAll('.nav-btn').forEach(b => {
+                    b.classList.remove('bg-brito-accent/10', 'text-brito-accent', 'dark:bg-brito-accent/20');
+                    b.classList.add('text-gray-600', 'dark:text-gray-400');
+                });
+                btn.classList.add('bg-brito-accent/10', 'text-brito-accent', 'dark:bg-brito-accent/20');
+                btn.classList.remove('text-gray-600', 'dark:text-gray-400');
+
+                if(tabId === 'calculator') {
+                    document.getElementById('tasks-view').classList.add('view-hidden');
+                    document.getElementById('calculator-view').classList.remove('view-hidden');
+                    document.getElementById('btn-new-task').classList.add('view-hidden');
+                    document.getElementById('header-title').textContent = 'Calculadora de Prazos';
+                    document.getElementById('header-subtitle').textContent = 'Calcule prazos do TJSE (2025/2026)';
+                } else {
+                    document.getElementById('tasks-view').classList.remove('view-hidden');
+                    document.getElementById('calculator-view').classList.add('view-hidden');
+                    document.getElementById('btn-new-task').classList.remove('view-hidden');
+                    
+                    if(tabId === 'all') document.getElementById('header-title').textContent = 'Todas as Tarefas';
+                    if(tabId === 'today') document.getElementById('header-title').textContent = 'Para Hoje (Fatal ou Confecção)';
+                    if(tabId === 'week') document.getElementById('header-title').textContent = 'Esta Semana';
+                    
+                    if (uid) document.getElementById('header-subtitle').textContent = `Sincronizado na Nuvem`;
+                    else document.getElementById('header-subtitle').textContent = `Faça login com o Google para ver suas tarefas`;
+                    
+                    renderTasks();
+                }
+            };
+        });
+
+        function renderTasks() {
+            if(!uid) {
+                 document.getElementById('tasks-list').innerHTML = `
+                <div class="text-center py-20 bg-white dark:bg-[#1A1A1E] rounded-2xl border border-dashed border-gray-300 dark:border-slate-700">
+                    <i class="fas fa-lock text-6xl text-gray-300 dark:text-gray-600 mx-auto mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Faça login para começar</h3>
+                    <p class="text-gray-500 mt-2">Clique em "Entrar com Google" no menu lateral para acessar suas tarefas salvas na nuvem.</p>
+                </div>`;
+                return;
+            }
+
+            cleanupTasks();
+            const list = document.getElementById('tasks-list');
+            let filtered = [...tasks].sort((a,b) => a.order - b.order);
+            const todayStr = new Date().toISOString().split('T')[0];
+            const nextWeek = new Date(); nextWeek.setDate(nextWeek.getDate() + 7);
+            const weekStr = nextWeek.toISOString().split('T')[0];
+
+            if(activeTab === 'today') filtered = filtered.filter(t => (t.fatalDate === todayStr || t.confeccaoDate === todayStr) && t.status !== 'concluida');
+            if(activeTab === 'week') filtered = filtered.filter(t => t.fatalDate >= todayStr && t.fatalDate <= weekStr);
+
+            if(filtered.length === 0) {
+                list.innerHTML = `
+                <div class="text-center py-20 bg-white dark:bg-[#1A1A1E] rounded-2xl border border-dashed border-gray-300 dark:border-slate-700">
+                    <i class="far fa-check-circle text-6xl text-gray-300 dark:text-gray-600 mx-auto mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Tudo limpo por aqui!</h3>
+                    <p class="text-gray-500 mt-2">Nenhuma tarefa pendente para esta visualização.</p>
+                </div>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            filtered.forEach((task, renderIndex) => {
+                const isConcluida = task.status === 'concluida';
+                let cardClass = '', textClass = '', subtextClass = '', iconClass = '';
+                
+                if (isConcluida) {
+                    cardClass = 'bg-gray-100 dark:bg-slate-800/50 opacity-60 border-gray-200 dark:border-slate-700';
+                    textClass = 'text-gray-500 line-through'; subtextClass = 'text-gray-400'; iconClass = 'text-gray-400 hover:text-gray-600';
+                } else if (!task.fatalDate) {
+                    cardClass = 'bg-blue-500 border-blue-600 shadow-md'; textClass = 'text-white font-bold'; subtextClass = 'text-blue-100'; iconClass = 'text-blue-200 hover:text-white';
+                } else {
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const fParts = task.fatalDate.split('-');
+                    const fatal = new Date(fParts[0], fParts[1]-1, fParts[2]);
+                    const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+
+                    if (fatal < today || fatal.getTime() === today.getTime()) {
+                        cardClass = 'bg-red-500 border-red-600 shadow-md'; textClass = 'text-white font-bold'; subtextClass = 'text-red-100'; iconClass = 'text-red-200 hover:text-white';
+                    } else if (fatal.getTime() === tomorrow.getTime()) {
+                        cardClass = 'bg-orange-500 border-orange-600 shadow-md'; textClass = 'text-white font-bold'; subtextClass = 'text-orange-100'; iconClass = 'text-orange-200 hover:text-white';
+                    } else {
+                        cardClass = 'bg-white border-gray-200 dark:bg-[#1A1A1E] dark:border-slate-700'; textClass = 'text-slate-900 dark:text-white'; subtextClass = 'text-gray-500 dark:text-gray-400'; iconClass = 'text-gray-400 hover:text-blue-500';
+                    }
+                }
+
+                let d2Str = '';
+                if(task.fatalDate) {
+                    const d = new Date(task.fatalDate + 'T00:00:00Z');
+                    let count = 0;
+                    while(count < 2) {
+                        d.setUTCDate(d.getUTCDate() - 1);
+                        const day = d.getUTCDay();
+                        if(day !== 0 && day !== 6) count++;
+                    }
+                    d2Str = d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                }
+
+                let confHTML = '';
+                if(task.confeccaoDate) {
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const cParts = task.confeccaoDate.split('-');
+                    const confDate = new Date(cParts[0], cParts[1]-1, cParts[2]);
+                    let confStyle = subtextClass;
+                    let confText = '';
+                    if (!isConcluida) {
+                        if (confDate < today) { confStyle = 'text-red-500 dark:text-red-400 font-bold bg-white/80 dark:bg-black/80 px-2 rounded-sm inline-flex max-w-max'; confText = ' (Atrasada ⚠️)'; }
+                        else if (confDate.getTime() === today.getTime()) { confStyle = 'text-amber-500 dark:text-amber-400 font-bold bg-white/80 dark:bg-black/80 px-2 rounded-sm inline-flex max-w-max'; confText = ' (HOJE ⏳)'; }
+                    }
+                    confHTML = `<div class="flex items-center font-medium text-xs pt-1 ${confStyle}"><i class="fas fa-edit w-3.5 h-3.5 mr-1.5"></i> Confecção: ${formatUIStr(task.confeccaoDate)}${confText}</div>`;
+                }
+
+                const el = document.createElement('div');
+                el.className = `group flex items-stretch p-4 rounded-xl border transition-all fade-in cursor-default ${cardClass}`;
+                el.draggable = true;
+                
+                const realIndex = tasks.findIndex(t => t.id === task.id);
+
+                el.ondragstart = (e) => { draggedItemIndex = realIndex; el.classList.add('opacity-50'); };
+                el.ondragenter = (e) => { el.classList.add('drag-over'); };
+                el.ondragleave = (e) => { el.classList.remove('drag-over'); };
+                el.ondragend = (e) => { 
+                    el.classList.remove('opacity-50'); 
+                    document.querySelectorAll('.drag-over').forEach(n => n.classList.remove('drag-over'));
+                };
+                el.ondragover = (e) => e.preventDefault();
+                el.ondrop = (e) => {
+                    e.preventDefault();
+                    el.classList.remove('drag-over');
+                    if (draggedItemIndex === null) return;
+                    const draggedItemContent = tasks.splice(draggedItemIndex, 1)[0];
+                    tasks.splice(realIndex, 0, draggedItemContent);
+                    tasks.forEach((t, i) => t.order = i);
+                    saveTasksToCloud();
+                };
+
+                el.innerHTML = `
+                    <div class="flex flex-col items-center justify-center pr-4 border-r border-black/10 dark:border-white/10 mr-4 cursor-grab active:cursor-grabbing text-black/30 dark:text-white/30 hover:text-black/60 dark:hover:text-white/60">
+                        <span class="text-sm font-bold mb-1 ${textClass}">${renderIndex + 1}</span>
+                        <i class="fas fa-grip-vertical"></i>
+                    </div>
+                    <div class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                        <div class="md:col-span-1 flex justify-center">
+                            <button class="btn-toggle w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors z-10 relative ${isConcluida ? 'bg-green-500 border-green-500 text-white' : 'border-black/20 dark:border-white/20 hover:border-brito-accent'}">
+                                ${isConcluida ? '<i class="fas fa-check text-xs"></i>' : ''}
+                            </button>
+                        </div>
+                        <div class="md:col-span-5">
+                            <h3 class="font-bold text-base ${textClass}">${escapeHTML(task.title)}</h3>
+                            <div class="flex flex-wrap items-center gap-2 mt-1.5 text-xs ${subtextClass}">
+                                ${task.clientName ? `<span class="bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded font-medium">${escapeHTML(task.clientName)}</span>` : ''}
+                                ${task.caseNumber ? `<span class="font-mono">${escapeHTML(task.caseNumber)}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="md:col-span-4 flex flex-col justify-center space-y-1">
+                            ${task.fatalDate ? `
+                                <div class="flex items-center text-sm font-bold ${textClass}">
+                                    <i class="far fa-calendar-times w-4 h-4 mr-1.5"></i> Fatal: ${formatUIStr(task.fatalDate)}
+                                </div>
+                                <div class="flex items-center font-medium text-xs ${subtextClass}">
+                                    <i class="far fa-calendar-check w-3.5 h-3.5 mr-1.5"></i> D-2 (Interno): ${d2Str}
+                                </div>
+                            ` : ''}
+                            ${confHTML}
+                        </div>
+                        <div class="md:col-span-2 flex justify-end space-x-2">
+                            <button class="btn-edit p-2 bg-black/5 dark:bg-white/5 rounded-lg transition-colors z-10 relative ${iconClass}"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete p-2 bg-black/5 dark:bg-white/5 rounded-lg transition-colors z-10 relative ${iconClass}"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </div>
+                `;
+
+                el.querySelector('.btn-toggle').onclick = () => {
+                    task.status = task.status === 'concluida' ? 'pendente' : 'concluida';
+                    task.completedAt = task.status === 'concluida' ? new Date().toISOString() : null;
+                    saveTasksToCloud();
+                };
+                el.querySelector('.btn-edit').onclick = () => window.openTaskModal(task.id);
+                el.querySelector('.btn-delete').onclick = () => {
+                    taskToDeleteId = task.id;
+                    document.getElementById('delete-task-name').textContent = `Tem certeza que deseja excluir a tarefa "${task.title}"?`;
+                    document.getElementById('modal-delete').classList.remove('hidden');
+                    document.getElementById('modal-delete').classList.add('flex');
+                };
+
+                list.appendChild(el);
+            });
+        }
+
+        // ==========================================
+        // 6. EXPORTANDO FUNÇÕES PARA O HTML (MÓDULOS)
+        // ==========================================
+        window.openTaskModal = function(id = null) {
+            if(!uid) {
+                alert("Você precisa fazer login com o Google para criar tarefas!");
+                return;
+            }
+            editingTaskId = id;
+            document.getElementById('form-task').reset();
+            document.getElementById('modal-task-title').textContent = id ? 'Editar Tarefa' : 'Nova Tarefa';
+            
+            if(id) {
+                const task = tasks.find(t => t.id === id);
+                document.getElementById('task-title').value = task.title || '';
+                document.getElementById('task-client').value = task.clientName || '';
+                document.getElementById('task-case').value = task.caseNumber || '';
+                document.getElementById('task-conf').value = task.confeccaoDate || '';
+                document.getElementById('task-fatal').value = task.fatalDate || '';
+                document.getElementById('task-complexity').value = task.complexity || 'Media';
+                document.getElementById('task-notes').value = task.notes || '';
+                document.getElementById('task-prompts').value = task.prompts || '';
+            }
+
+            document.getElementById('modal-task').classList.remove('hidden');
+            document.getElementById('modal-task').classList.add('flex');
+        };
+
+        window.closeTaskModal = function() { 
+            document.getElementById('modal-task').classList.add('hidden'); 
+            document.getElementById('modal-task').classList.remove('flex'); 
+        };
+        
+        window.closeDeleteModal = function() { 
+            document.getElementById('modal-delete').classList.add('hidden'); 
+            document.getElementById('modal-delete').classList.remove('flex'); 
+        };
+        
+        window.executeDelete = function() {
+            if(taskToDeleteId) {
+                tasks = tasks.filter(t => t.id !== taskToDeleteId);
+                tasks.forEach((t, i) => t.order = i);
+                saveTasksToCloud();
+            }
+            window.closeDeleteModal();
+        };
+
+        document.getElementById('form-task').onsubmit = (e) => {
+            e.preventDefault();
+            const task = {
+                id: editingTaskId || Date.now().toString(),
+                title: document.getElementById('task-title').value,
+                clientName: document.getElementById('task-client').value,
+                caseNumber: document.getElementById('task-case').value,
+                confeccaoDate: document.getElementById('task-conf').value,
+                fatalDate: document.getElementById('task-fatal').value,
+                complexity: document.getElementById('task-complexity').value,
+                notes: document.getElementById('task-notes').value,
+                prompts: document.getElementById('task-prompts').value,
+                status: 'pendente',
+                order: editingTaskId ? tasks.find(t => t.id === editingTaskId).order : tasks.length
+            };
+            
+            if(editingTaskId) {
+                const idx = tasks.findIndex(t => t.id === editingTaskId);
+                task.status = tasks[idx].status;
+                task.completedAt = tasks[idx].completedAt;
+                tasks[idx] = task;
+            } else {
+                tasks.push(task);
+            }
+            
+            window.closeTaskModal();
+            saveTasksToCloud();
+        };
+
+        window.openSettingsModal = function() {
+            document.getElementById('select-delete-delay').value = deleteDelay;
+            document.getElementById('modal-settings').classList.remove('hidden');
+            document.getElementById('modal-settings').classList.add('flex');
+        };
+
+        window.closeSettingsModal = function() { 
+            document.getElementById('modal-settings').classList.add('hidden'); 
+            document.getElementById('modal-settings').classList.remove('flex'); 
+        };
+
+        window.saveSettings = function() {
+            deleteDelay = document.getElementById('select-delete-delay').value;
+            localStorage.setItem('brito-delete-delay', deleteDelay);
+            window.closeSettingsModal();
+            renderTasks();
+        };
+
+        // ==========================================
+        // 7. LÓGICA DA CALCULADORA EMBUTIDA
+        // ==========================================
+        const calendarData = {
+            '2025-01-01': 3, '2025-01-02': 4, '2025-01-03': 5, '2025-01-04': 6, '2025-01-05': 0, '2025-01-06': 1, '2025-01-07': 2, '2025-01-08': 3, '2025-01-09': 4, '2025-01-10': 5, '2025-01-11': 6, '2025-01-12': 0, '2025-01-13': 1, '2025-01-14': 2, '2025-01-15': 3, '2025-01-16': 4, '2025-01-17': 5, '2025-01-18': 6, '2025-01-19': 0, '2025-01-20': 1, '2025-01-21': 2, '2025-01-22': 3, '2025-01-23': 4, '2025-01-24': 5, '2025-01-25': 6, '2025-01-26': 0, '2025-01-27': 1, '2025-01-28': 2, '2025-01-29': 3, '2025-01-30': 4, '2025-01-31': 5,
+            '2025-02-01': 6, '2025-02-02': 0, '2025-02-03': 1, '2025-02-04': 2, '2025-02-05': 3, '2025-02-06': 4, '2025-02-07': 5, '2025-02-08': 6, '2025-02-09': 0, '2025-02-10': 1, '2025-02-11': 2, '2025-02-12': 3, '2025-02-13': 4, '2025-02-14': 5, '2025-02-15': 6, '2025-02-16': 0, '2025-02-17': 1, '2025-02-18': 2, '2025-02-19': 3, '2025-02-20': 4, '2025-02-21': 5, '2025-02-22': 6, '2025-02-23': 0, '2025-02-24': 1, '2025-02-25': 2, '2025-02-26': 3, '2025-02-27': 4, '2025-02-28': 5,
+            '2025-03-01': 6, '2025-03-02': 0, '2025-03-03': 1, '2025-03-04': 2, '2025-03-05': 3, '2025-03-06': 4, '2025-03-07': 5, '2025-03-08': 6, '2025-03-09': 0, '2025-03-10': 1, '2025-03-11': 2, '2025-03-12': 3, '2025-03-13': 4, '2025-03-14': 5, '2025-03-15': 6, '2025-03-16': 0, '2025-03-17': 1, '2025-03-18': 2, '2025-03-19': 3, '2025-03-20': 4, '2025-03-21': 5, '2025-03-22': 6, '2025-03-23': 0, '2025-03-24': 1, '2025-03-25': 2, '2025-03-26': 3, '2025-03-27': 4, '2025-03-28': 5, '2025-03-29': 6, '2025-03-30': 0, '2025-03-31': 1,
+            '2025-04-01': 2, '2025-04-02': 3, '2025-04-03': 4, '2025-04-04': 5, '2025-04-05': 6, '2025-04-06': 0, '2025-04-07': 1, '2025-04-08': 2, '2025-04-09': 3, '2025-04-10': 4, '2025-04-11': 5, '2025-04-12': 6, '2025-04-13': 0, '2025-04-14': 1, '2025-04-15': 2, '2025-04-16': 3, '2025-04-17': 4, '2025-04-18': 5, '2025-04-19': 6, '2025-04-20': 0, '2025-04-21': 1, '2025-04-22': 2, '2025-04-23': 3, '2025-04-24': 4, '2025-04-25': 5, '2025-04-26': 6, '2025-04-27': 0, '2025-04-28': 1, '2025-04-29': 2, '2025-04-30': 3,
+            '2025-05-01': 4, '2025-05-02': 5, '2025-05-03': 6, '2025-05-04': 0, '2025-05-05': 1, '2025-05-06': 2, '2025-05-07': 3, '2025-05-08': 4, '2025-05-09': 5, '2025-05-10': 6, '2025-05-11': 0, '2025-05-12': 1, '2025-05-13': 2, '2025-05-14': 3, '2025-05-15': 4, '2025-05-16': 5, '2025-05-17': 6, '2025-05-18': 0, '2025-05-19': 1, '2025-05-20': 2, '2025-05-21': 3, '2025-05-22': 4, '2025-05-23': 5, '2025-05-24': 6, '2025-05-25': 0, '2025-05-26': 1, '2025-05-27': 2, '2025-05-28': 3, '2025-05-29': 4, '2025-05-30': 5, '2025-05-31': 6,
+            '2025-06-01': 0, '2025-06-02': 1, '2025-06-03': 2, '2025-06-04': 3, '2025-06-05': 4, '2025-06-06': 5, '2025-06-07': 6, '2025-06-08': 0, '2025-06-09': 1, '2025-06-10': 2, '2025-06-11': 3, '2025-06-12': 4, '2025-06-13': 5, '2025-06-14': 6, '2025-06-15': 0, '2025-06-16': 1, '2025-06-17': 2, '2025-06-18': 3, '2025-06-19': 4, '2025-06-20': 5, '2025-06-21': 6, '2025-06-22': 0, '2025-06-23': 1, '2025-06-24': 2, '2025-06-25': 3, '2025-06-26': 4, '2025-06-27': 5, '2025-06-28': 6, '2025-06-29': 0, '2025-06-30': 1,
+            '2025-07-01': 2, '2025-07-02': 3, '2025-07-03': 4, '2025-07-04': 5, '2025-07-05': 6, '2025-07-06': 0, '2025-07-07': 1, '2025-07-08': 2, '2025-07-09': 3, '2025-07-10': 4, '2025-07-11': 5, '2025-07-12': 6, '2025-07-13': 0, '2025-07-14': 1, '2025-07-15': 2, '2025-07-16': 3, '2025-07-17': 4, '2025-07-18': 5, '2025-07-19': 6, '2025-07-20': 0, '2025-07-21': 1, '2025-07-22': 2, '2025-07-23': 3, '2025-07-24': 4, '2025-07-25': 5, '2025-07-26': 6, '2025-07-27': 0, '2025-07-28': 1, '2025-07-29': 2, '2025-07-30': 3, '2025-07-31': 4,
+            '2025-08-01': 5, '2025-08-02': 6, '2025-08-03': 0, '2025-08-04': 1, '2025-08-05': 2, '2025-08-06': 3, '2025-08-07': 4, '2025-08-08': 5, '2025-08-09': 6, '2025-08-10': 0, '2025-08-11': 1, '2025-08-12': 2, '2025-08-13': 3, '2025-08-14': 4, '2025-08-15': 5, '2025-08-16': 6, '2025-08-17': 0, '2025-08-18': 1, '2025-08-19': 2, '2025-08-20': 3, '2025-08-21': 4, '2025-08-22': 5, '2025-08-23': 6, '2025-08-24': 0, '2025-08-25': 1, '2025-08-26': 2, '2025-08-27': 3, '2025-08-28': 4, '2025-08-29': 5, '2025-08-30': 6, '2025-08-31': 0,
+            '2025-09-01': 1, '2025-09-02': 2, '2025-09-03': 3, '2025-09-04': 4, '2025-09-05': 5, '2025-09-06': 6, '2025-09-07': 0, '2025-09-08': 1, '2025-09-09': 2, '2025-09-10': 3, '2025-09-11': 4, '2025-09-12': 5, '2025-09-13': 6, '2025-09-14': 0, '2025-09-15': 1, '2025-09-16': 2, '2025-09-17': 3, '2025-09-18': 4, '2025-09-19': 5, '2025-09-20': 6, '2025-09-21': 0, '2025-09-22': 1, '2025-09-23': 2, '2025-09-24': 3, '2025-09-25': 4, '2025-09-26': 5, '2025-09-27': 6, '2025-09-28': 0, '2025-09-29': 1, '2025-09-30': 2,
+            '2025-10-01': 3, '2025-10-02': 4, '2025-10-03': 5, '2025-10-04': 6, '2025-10-05': 0, '2025-10-06': 1, '2025-10-07': 2, '2025-10-08': 3, '2025-10-09': 4, '2025-10-10': 5, '2025-10-11': 6, '2025-10-12': 0, '2025-10-13': 1, '2025-10-14': 2, '2025-10-15': 3, '2025-10-16': 4, '2025-10-17': 5, '2025-10-18': 6, '2025-10-19': 0, '2025-10-20': 1, '2025-10-21': 2, '2025-10-22': 3, '2025-10-23': 4, '2025-10-24': 5, '2025-10-25': 6, '2025-10-26': 0, '2025-10-27': 1, '2025-10-28': 2, '2025-10-29': 3, '2025-10-30': 4, '2025-10-31': 5,
+            '2025-11-01': 6, '2025-11-02': 0, '2025-11-03': 1, '2025-11-04': 2, '2025-11-05': 3, '2025-11-06': 4, '2025-11-07': 5, '2025-11-08': 6, '2025-11-09': 0, '2025-11-10': 1, '2025-11-11': 2, '2025-11-12': 3, '2025-11-13': 4, '2025-11-14': 5, '2025-11-15': 6, '2025-11-16': 0, '2025-11-17': 1, '2025-11-18': 2, '2025-11-19': 3, '2025-11-20': 4, '2025-11-21': 5, '2025-11-22': 6, '2025-11-23': 0, '2025-11-24': 1, '2025-11-25': 2, '2025-11-26': 3, '2025-11-27': 4, '2025-11-28': 5, '2025-11-29': 6, '2025-11-30': 0,
+            '2025-12-01': 1, '2025-12-02': 2, '2025-12-03': 3, '2025-12-04': 4, '2025-12-05': 5, '2025-12-06': 6, '2025-12-07': 0, '2025-12-08': 1, '2025-12-09': 2, '2025-12-10': 3, '2025-12-11': 4, '2025-12-12': 5, '2025-12-13': 6, '2025-12-14': 0, '2025-12-15': 1, '2025-12-16': 2, '2025-12-17': 3, '2025-12-18': 4, '2025-12-19': 5, '2025-12-20': 6, '2025-12-21': 0, '2025-12-22': 1, '2025-12-23': 2, '2025-12-24': 3, '2025-12-25': 4, '2025-12-26': 5, '2025-12-27': 6, '2025-12-28': 0, '2025-12-29': 1, '2025-12-30': 2, '2025-12-31': 3,
+
+             // --- 2026 ---
+            '2026-01-01': 4, '2026-01-02': 5, '2026-01-03': 6, '2026-01-04': 0, '2026-01-05': 1, '2026-01-06': 2, '2026-01-07': 3, '2026-01-08': 4, '2026-01-09': 5, '2026-01-10': 6, '2026-01-11': 0, '2026-01-12': 1, '2026-01-13': 2, '2026-01-14': 3, '2026-01-15': 4, '2026-01-16': 5, '2026-01-17': 6, '2026-01-18': 0, '2026-01-19': 1, '2026-01-20': 2, '2026-01-21': 3, '2026-01-22': 4, '2026-01-23': 5, '2026-01-24': 6, '2026-01-25': 0, '2026-01-26': 1, '2026-01-27': 2, '2026-01-28': 3, '2026-01-29': 4, '2026-01-30': 5, '2026-01-31': 6,
+            '2026-02-01': 0, '2026-02-02': 1, '2026-02-03': 2, '2026-02-04': 3, '2026-02-05': 4, '2026-02-06': 5, '2026-02-07': 6, '2026-02-08': 0, '2026-02-09': 1, '2026-02-10': 2, '2026-02-11': 3, '2026-02-12': 4, '2026-02-13': 5, '2026-02-14': 6, '2026-02-15': 0, '2026-02-16': 1, '2026-02-17': 2, '2026-02-18': 3, '2026-02-19': 4, '2026-02-20': 5, '2026-02-21': 6, '2026-02-22': 0, '2026-02-23': 1, '2026-02-24': 2, '2026-02-25': 3, '2026-02-26': 4, '2026-02-27': 5, '2026-02-28': 6,
+            '2026-03-01': 0, '2026-03-02': 1, '2026-03-03': 2, '2026-03-04': 3, '2026-03-05': 4, '2026-03-06': 5, '2026-03-07': 6, '2026-03-08': 0, '2026-03-09': 1, '2026-03-10': 2, '2026-03-11': 3, '2026-03-12': 4, '2026-03-13': 5, '2026-03-14': 6, '2026-03-15': 0, '2026-03-16': 1, '2026-03-17': 2, '2026-03-18': 3, '2026-03-19': 4, '2026-03-20': 5, '2026-03-21': 6, '2026-03-22': 0, '2026-03-23': 1, '2026-03-24': 2, '2026-03-25': 3, '2026-03-26': 4, '2026-03-27': 5, '2026-03-28': 6, '2026-03-29': 0, '2026-03-30': 1, '2026-03-31': 2,
+            '2026-04-01': 3, '2026-04-02': 4, '2026-04-03': 5, '2026-04-04': 6, '2026-04-05': 0, '2026-04-06': 1, '2026-04-07': 2, '2026-04-08': 3, '2026-04-09': 4, '2026-04-10': 5, '2026-04-11': 6, '2026-04-12': 0, '2026-04-13': 1, '2026-04-14': 2, '2026-04-15': 3, '2026-04-16': 4, '2026-04-17': 5, '2026-04-18': 6, '2026-04-19': 0, '2026-04-20': 1, '2026-04-21': 2, '2026-04-22': 3, '2026-04-23': 4, '2026-04-24': 5, '2026-04-25': 6, '2026-04-26': 0, '2026-04-27': 1, '2026-04-28': 2, '2026-04-29': 3, '2026-04-30': 4,
+            '2026-05-01': 5, '2026-05-02': 6, '2026-05-03': 0, '2026-05-04': 1, '2026-05-05': 2, '2026-05-06': 3, '2026-05-07': 4, '2026-05-08': 5, '2026-05-09': 6, '2026-05-10': 0, '2026-05-11': 1, '2026-05-12': 2, '2026-05-13': 3, '2026-05-14': 4, '2026-05-15': 5, '2026-05-16': 6, '2026-05-17': 0, '2026-05-18': 1, '2026-05-19': 2, '2026-05-20': 3, '2026-05-21': 4, '2026-05-22': 5, '2026-05-23': 6, '2026-05-24': 0, '2026-05-25': 1, '2026-05-26': 2, '2026-05-27': 3, '2026-05-28': 4, '2026-05-29': 5, '2026-05-30': 6, '2026-05-31': 0,
+            '2026-06-01': 1, '2026-06-02': 2, '2026-06-03': 3, '2026-06-04': 4, '2026-06-05': 5, '2026-06-06': 6, '2026-06-07': 0, '2026-06-08': 1, '2026-06-09': 2, '2026-06-10': 3, '2026-06-11': 4, '2026-06-12': 5, '2026-06-13': 6, '2026-06-14': 0, '2026-06-15': 1, '2026-06-16': 2, '2026-06-17': 3, '2026-06-18': 4, '2026-06-19': 5, '2026-06-20': 6, '2026-06-21': 0, '2026-06-22': 1, '2026-06-23': 2, '2026-06-24': 3, '2026-06-25': 4, '2026-06-26': 5, '2026-06-27': 6, '2026-06-28': 0, '2026-06-29': 1, '2026-06-30': 2,
+            '2026-07-01': 3, '2026-07-02': 4, '2026-07-03': 5, '2026-07-04': 6, '2026-07-05': 0, '2026-07-06': 1, '2026-07-07': 2, '2026-07-08': 3, '2026-07-09': 4, '2026-07-10': 5, '2026-07-11': 6, '2026-07-12': 0, '2026-07-13': 1, '2026-07-14': 2, '2026-07-15': 3, '2026-07-16': 4, '2026-07-17': 5, '2026-07-18': 6, '2026-07-19': 0, '2026-07-20': 1, '2026-07-21': 2, '2026-07-22': 3, '2026-07-23': 4, '2026-07-24': 5, '2026-07-25': 6, '2026-07-26': 0, '2026-07-27': 1, '2026-07-28': 2, '2026-07-29': 3, '2026-07-30': 4, '2026-07-31': 5,
+            '2026-08-01': 6, '2026-08-02': 0, '2026-08-03': 1, '2026-08-04': 2, '2026-08-05': 3, '2026-08-06': 4, '2026-08-07': 5, '2026-08-08': 6, '2026-08-09': 0, '2026-08-10': 1, '2026-08-11': 2, '2026-08-12': 3, '2026-08-13': 4, '2026-08-14': 5, '2026-08-15': 6, '2026-08-16': 0, '2026-08-17': 1, '2026-08-18': 2, '2026-08-19': 3, '2026-08-20': 4, '2026-08-21': 5, '2026-08-22': 6, '2026-08-23': 0, '2026-08-24': 1, '2026-08-25': 2, '2026-08-26': 3, '2026-08-27': 4, '2026-08-28': 5, '2026-08-29': 6, '2026-08-30': 0, '2026-08-31': 1,
+            '2026-09-01': 2, '2026-09-02': 3, '2026-09-03': 4, '2026-09-04': 5, '2026-09-05': 6, '2026-09-06': 0, '2026-09-07': 1, '2026-09-08': 2, '2026-09-09': 3, '2026-09-10': 4, '2026-09-11': 5, '2026-09-12': 6, '2026-09-13': 0, '2026-09-14': 1, '2026-09-15': 2, '2026-09-16': 3, '2026-09-17': 4, '2026-09-18': 5, '2026-09-19': 6, '2026-09-20': 0, '2026-09-21': 1, '2026-09-22': 2, '2026-09-23': 3, '2026-09-24': 4, '2026-09-25': 5, '2026-09-26': 6, '2026-09-27': 0, '2026-09-28': 1, '2026-09-29': 2, '2026-09-30': 3,
+            '2026-10-01': 4, '2026-10-02': 5, '2026-10-03': 6, '2026-10-04': 0, '2026-10-05': 1, '2026-10-06': 2, '2026-10-07': 3, '2026-10-08': 4, '2026-10-09': 5, '2026-10-10': 6, '2026-10-11': 0, '2026-10-12': 1, '2026-10-13': 2, '2026-10-14': 3, '2026-10-15': 4, '2026-10-16': 5, '2026-10-17': 6, '2026-10-18': 0, '2026-10-19': 1, '2026-10-20': 2, '2026-10-21': 3, '2026-10-22': 4, '2026-10-23': 5, '2026-10-24': 6, '2026-10-25': 0, '2026-10-26': 1, '2026-10-27': 2, '2026-10-28': 3, '2026-10-29': 4, '2026-10-30': 5, '2026-10-31': 6,
+            '2026-11-01': 0, '2026-11-02': 1, '2026-11-03': 2, '2026-11-04': 3, '2026-11-05': 4, '2026-11-06': 5, '2026-11-07': 6, '2026-11-08': 0, '2026-11-09': 1, '2026-11-10': 2, '2026-11-11': 3, '2026-11-12': 4, '2026-11-13': 5, '2026-11-14': 6, '2026-11-15': 0, '2026-11-16': 1, '2026-11-17': 2, '2026-11-18': 3, '2026-11-19': 4, '2026-11-20': 5, '2026-11-21': 6, '2026-11-22': 0, '2026-11-23': 1, '2026-11-24': 2, '2026-11-25': 3, '2026-11-26': 4, '2026-11-27': 5, '2026-11-28': 6, '2026-11-29': 0, '2026-11-30': 1,
+            '2026-12-01': 2, '2026-12-02': 3, '2026-12-03': 4, '2026-12-04': 5, '2026-12-05': 6, '2026-12-06': 0, '2026-12-07': 1, '2026-12-08': 2, '2026-12-09': 3, '2026-12-10': 4, '2026-12-11': 5, '2026-12-12': 6, '2026-12-13': 0, '2026-12-14': 1, '2026-12-15': 2, '2026-12-16': 3, '2026-12-17': 4, '2026-12-18': 5, '2026-12-19': 6, '2026-12-20': 0, '2026-12-21': 1, '2026-12-22': 2, '2026-12-23': 3, '2026-12-24': 4, '2026-12-25': 5, '2026-12-26': 6, '2026-12-27': 0, '2026-12-28': 1, '2026-12-29': 2, '2026-12-30': 3, '2026-12-31': 4
+        };
+        const weekdaysCalc = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+        const holidayDetails = {
+            'geral': {
+                '2025-01-01': 'Confraternização Universal', '2025-03-03': 'Ponto Facultativo - Carnaval', '2025-03-04': 'Feriado - Carnaval', '2025-03-05': 'Ponto Facultativo - Cinzas', '2025-04-17': 'Ponto Facultativo - Quinta-feira Santa', '2025-04-18': 'Paixão de Cristo', '2025-04-21': 'Tiradentes', '2025-05-01': 'Dia do Trabalho', '2025-05-02': 'Ponto Facultativo', '2025-06-19': 'Corpus Christi', '2025-06-20': 'Ponto Facultativo', '2025-06-23': 'Ponto Facultativo', '2025-06-24': 'São João', '2025-07-07': 'Ponto Facultativo', '2025-07-08': 'Emancipação de Sergipe', '2025-08-11': 'Dia do Magistrado', '2025-09-07': 'Independência do Brasil', '2025-10-12': 'Nossa Senhora Aparecida', '2025-10-27': 'Ponto Facultativo', '2025-10-28': 'Dia do Funcionário Público', '2025-11-02': 'Finados', '2025-11-15': 'Proclamação da República', '2025-11-20': 'Dia Nacional de Zumbi', '2025-11-21': 'Ponto Facultativo', '2025-12-08': 'Dia da Justiça', '2025-12-25': 'Natal',
+                '2026-01-01': 'Confraternização Universal', '2026-02-16': 'Ponto Facultativo - Carnaval', '2026-02-17': 'Carnaval', '2026-02-18': 'Ponto Facultativo - Quarta-feira de Cinzas', '2026-04-02': 'Ponto Facultativo - Quinta-feira Santa', '2026-04-03': 'Paixão de Cristo', '2026-04-20': 'Ponto Facultativo', '2026-04-21': 'Tiradentes', '2026-05-01': 'Dia do Trabalho', '2026-06-04': 'Corpus Christi', '2026-06-05': 'Ponto Facultativo', '2026-06-24': 'São João', '2026-06-29': 'Ponto Facultativo - São Pedro', '2026-07-08': 'Emancipação de Sergipe', '2026-08-10': 'Ponto Facultativo', '2026-08-11': 'Dia do Magistrado', '2026-09-07': 'Independência do Brasil', '2026-10-12': 'Nossa Senhora Aparecida', '2026-10-30': 'Dia do Funcionário Público', '2026-11-02': 'Finados', '2026-11-15': 'Proclamação da República', '2026-11-20': 'Dia Nacional de Zumbi e da Consciência Negra', '2026-12-07': 'Ponto Facultativo', '2026-12-08': 'Dia da Justiça', '2026-12-25': 'Natal'
+            },
+            'Aracaju': { '2025-03-17': 'Aniversário da Capital', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-03-17': 'Aniversário da Capital', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+            'Aquidabã': { '2025-04-04': 'Emancipação Política', '2025-07-26': 'Padroeira (Sant\'Ana)', '2026-04-04': 'Emancipação Política', '2026-07-26': 'Padroeira (Sant\'Ana)' },
+            'Arauá': { '2025-04-09': 'Emancipação Política', '2025-10-05': 'São Benedito', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-04-09': 'Emancipação Política', '2026-10-05': 'São Benedito', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+            'Areia Branca': { '2025-11-11': 'Fundação da Cidade', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-11-11': 'Fundação da Cidade', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+            'Barra dos Coqueiros': { '2025-11-25': 'Emancipação Política', '2025-12-13': 'Padroeira (Santa Luzia)', '2026-11-25': 'Emancipação Política', '2026-12-13': 'Padroeira (Santa Luzia)' },
+            'Boquim': { '2025-03-21': 'Criação do Município', '2025-07-26': 'Padroeira (Sant\'Ana)', '2026-03-21': 'Criação do Município', '2026-07-26': 'Padroeira (Sant\'Ana)' },
+            'Campo do Brito': { '2025-08-15': 'Padroeira (N. Sra. da Boa Hora)', '2025-08-16': 'Padroeiro (São Roque)', '2025-10-29': 'Emancipação Política', '2026-08-15': 'Padroeira (N. Sra. da Boa Hora)', '2026-08-16': 'Padroeiro (São Roque)', '2026-10-29': 'Emancipação Política' },
+            'Canindé de São Francisco': { '2025-11-25': 'Emancipação Política', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-11-25': 'Emancipação Política', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+            'Capela': { '2025-02-02': 'Padroeiro', '2025-08-28': 'Emancipação Política', '2026-02-02': 'Padroeiro', '2026-08-28': 'Emancipação Política' },
+            'Carira': { '2025-05-03': 'Padroeira (Santa Cruz)', '2025-11-25': 'Emancipação Política', '2026-05-03': 'Padroeira (Santa Cruz)', '2026-11-25': 'Emancipação Política' },
+            'Carmópolis': { '2025-07-16': 'Padroeira (N. Sra. do Carmo)', '2025-10-16': 'Emancipação Política', '2025-11-29': 'Dia do Evangélico', '2026-07-16': 'Padroeira (N. Sra. do Carmo)', '2026-10-16': 'Emancipação Política', '2026-11-29': 'Dia do Evangélico' },
+            'Cedro de São João': { '2025-06-24': 'Padroeiro (São João)', '2025-10-04': 'Emancipação Política', '2026-06-24': 'Padroeiro (São João)', '2026-10-04': 'Emancipação Política' },
+            'Cristinápolis': { '2025-04-24': 'Emancipação Política', '2025-08-01': 'Feriado Municipal Evangélico', '2025-10-04': 'Padroeiro (São Francisco de Assis)', '2026-04-24': 'Emancipação Política', '2026-07-31': 'Feriado Municipal Evangélico', '2026-10-04': 'Padroeiro (São Francisco de Assis)' },
+            'Divina Pastora': { '2025-03-12': 'Emancipação Política', '2025-10-14': 'Padroeira', '2026-03-12': 'Emancipação Política', '2026-10-14': 'Padroeira' },
+            'Estância': { '2025-05-04': 'Aniversário da Cidade', '2025-12-12': 'Padroeira (N. Sra. de Guadalupe)', '2026-05-04': 'Aniversário da Cidade', '2026-12-12': 'Padroeira (N. Sra. de Guadalupe)' },
+            'Frei Paulo': { '2025-06-30': 'Padroeiro (São Paulo)', '2025-10-23': 'Emancipação Política', '2026-06-30': 'Padroeiro (São Paulo)', '2026-10-23': 'Emancipação Política' },
+            'Gararu': { '2025-03-15': 'Emancipação Política', '2025-05-10': 'Festa do Cruzeiro', '2025-08-15': 'Assunção de Nossa Senhora', '2026-03-15': 'Emancipação Política', '2026-05-10': 'Festa do Cruzeiro', '2026-08-15': 'Assunção de Nossa Senhora' },
+            'Indiaroba': { '2025-03-28': 'Emancipação Política', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-03-28': 'Emancipação Política', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+            'Itabaiana': { '2025-01-30': 'Padroeira (N. Sra. do Bom Parto)', '2025-06-13': 'Padroeiro (Santo Antônio)', '2025-08-28': 'Emancipação Política', '2026-01-29': 'Padroeira', '2026-06-13': 'Padroeiro (Santo Antônio)', '2026-08-28': 'Emancipação Política' },
+            'Itabaianinha': { '2025-10-19': 'Emancipação Política', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-10-19': 'Emancipação Política', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+            'Itaporanga D\'Ajuda': { '2025-02-02': 'Padroeira', '2025-03-28': 'Emancipação Política', '2026-02-02': 'Padroeira', '2026-03-28': 'Emancipação Política' },
+            'Japaratuba': { '2025-06-11': 'Emancipação Política', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-06-11': 'Emancipação Política', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+            'Japoatã': { '2025-11-21': 'Padroeira', '2025-11-23': 'Emancipação Política', '2026-11-21': 'Padroeira', '2026-11-23': 'Emancipação Política' },
+            'Lagarto': { '2025-04-20': 'Emancipação Política', '2025-09-08': 'Padroeira (N. Sra. da Piedade)', '2026-04-20': 'Emancipação Política', '2026-09-08': 'Padroeira (N. Sra. da Piedade)' },
+            'Laranjeiras': { '2025-06-27': 'Padroeiro', '2025-08-07': 'Emancipação Política', '2026-06-12': 'Padroeiro', '2026-08-07': 'Emancipação Política' },
+            'Malhador': { '2025-03-19': 'Padroeiro (São José)', '2025-11-25': 'Emancipação Política', '2026-03-19': 'Padroeiro (São José)', '2026-11-25': 'Emancipação Política' },
+            'Maruim': { '2025-01-21': 'Padroeiro', '2025-05-05': 'Emancipação Política', '2025-08-15': 'Co-Padroeira (N. Sra. da Paz)', '2026-01-21': 'Padroeiro', '2026-05-05': 'Emancipação Política', '2026-08-15': 'Co-Padroeira (N. Sra. da Paz)' },
+            'Monte Alegre de Sergipe': { '2025-06-27': 'Padroeiro', '2025-11-25': 'Emancipação Política', '2026-06-12': 'Padroeiro', '2026-11-25': 'Emancipação Política' },
+            'Neópolis': { '2025-06-13': 'Padroeiro (Santo Antônio)', '2025-06-29': 'São Pedro', '2025-10-07': 'Nossa Senhora do Rosário', '2025-10-18': 'Fundação da Cidade', '2026-06-13': 'Padroeiro (Santo Antônio)', '2026-06-29': 'São Pedro', '2026-10-07': 'Nossa Senhora do Rosário', '2026-10-18': 'Fundação da Cidade' },
+            'Nossa Senhora da Glória': { '2025-01-05': 'Festa dos Santos Reis', '2025-08-15': 'Padroeira', '2025-09-26': 'Emancipação Política', '2026-01-05': 'Festa dos Santos Reis', '2026-08-15': 'Padroeira', '2026-09-26': 'Emancipação Política' },
+            'Nossa Senhora das Dores': { '2025-06-11': 'Emancipação Política', '2025-09-15': 'Padroeira', '2025-10-23': 'Aniversário da Cidade', '2026-06-11': 'Emancipação Política', '2026-09-15': 'Padroeira', '2026-10-23': 'Aniversário da Cidade' },
+            'Nossa Senhora do Socorro': { '2025-02-02': 'Padroeira', '2025-07-07': 'Emancipação Política', '2025-08-15': 'N. Sra. do Amparo', '2026-02-02': 'Padroeira', '2026-07-07': 'Emancipação Política', '2026-08-15': 'N. Sra. do Amparo' },
+            'Pacatuba': { '2025-11-20': 'Padroeiro', '2025-11-25': 'Emancipação Política', '2026-11-20': 'Padroeiro', '2026-11-25': 'Emancipação Política' },
+            'Pedrinhas': { '2025-03-19': 'Padroeiro (São José)', '2025-11-25': 'Emancipação Política', '2026-03-19': 'Padroeiro (São José)', '2026-11-25': 'Emancipação Política' },
+            'Pirambu': { '2025-02-11': 'Padroeira', '2025-11-26': 'Emancipação Política', '2026-02-11': 'Padroeira', '2026-11-26': 'Emancipação Política' },
+            'Poço Redondo': { '2025-08-15': 'Padroeira', '2025-11-25': 'Emancipação Política', '2026-08-15': 'Padroeira', '2026-11-25': 'Emancipação Política' },
+            'Poço Verde': { '2025-01-20': 'Padroeiro', '2025-05-03': 'Co-Padroeira', '2025-11-25': 'Emancipação Política', '2026-01-20': 'Padroeiro', '2026-05-03': 'Co-Padroeira', '2026-11-25': 'Emancipação Política' },
+            'Porto da Folha': { '2025-02-19': 'Emancipação Política', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-02-19': 'Emancipação Política', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+            'Propriá': { '2025-02-07': 'Emancipação Política', '2025-06-13': 'Padroeiro (Santo Antônio)', '2026-02-07': 'Emancipação Política', '2026-06-13': 'Padroeiro (Santo Antônio)' },
+            'Riachão do Dantas': { '2025-05-09': 'Emancipação Política', '2025-11-21': 'Padroeira', '2026-05-09': 'Emancipação Política', '2026-11-21': 'Padroeira' },
+            'Riachuelo': { '2025-01-25': 'Emancipação Política', '2025-06-11': 'Batalha Naval de Riachuelo', '2025-12-08': 'Padroeira (N. Sra. da Conceição)', '2026-01-25': 'Emancipação Política', '2026-06-11': 'Batalha Naval de Riachuelo', '2026-12-08': 'Padroeira (N. Sra. da Conceição)' },
+            'Ribeirópolis': { '2025-10-26': 'Padroeiro', '2025-12-18': 'Emancipação Política', '2026-10-25': 'Padroeiro', '2026-12-18': 'Emancipação Política' },
+            'Salgado': { '2025-01-22': 'Padroeiro', '2025-10-04': 'Emancipação Política', '2026-01-22': 'Padroeiro', '2026-10-04': 'Emancipação Política' },
+            'Santana do São Francisco': { '2025-04-06': 'Emancipação Política', '2025-07-26': 'Padroeira (Sant\'Ana)', '2026-04-06': 'Emancipação Política', '2026-07-26': 'Padroeira (Sant\'Ana)' },
+            'Santo Amaro das Brotas': { '2025-01-15': 'Padroeiro', '2025-12-15': 'Emancipação Política', '2026-01-15': 'Padroeiro', '2026-12-15': 'Emancipação Política' },
+            'São Cristóvão': { '2025-09-08': 'Padroeira', '2026-09-08': 'Padroeira' },
+            'São Domingos': { '2025-08-08': 'Padroeiro', '2025-10-21': 'Emancipação Política', '2026-08-08': 'Padroeiro', '2026-10-21': 'Emancipação Política' },
+            'Simão Dias': { '2025-06-12': 'Emancipação Política', '2025-07-26': 'Padroeira (Sant\'Ana)', '2026-06-12': 'Emancipação Política', '2026-07-26': 'Padroeira (Sant\'Ana)' },
+            'Tobias Barreto': { '2025-06-07': 'Aniversário de Tobias Barreto', '2025-08-15': 'Padroeira', '2025-10-23': 'Emancipação Política', '2026-06-07': 'Aniversário de Tobias Barreto', '2026-08-15': 'Padroeira', '2026-10-23': 'Emancipação Política' },
+            'Umbaúba': { '2025-02-02': 'Padroeira', '2025-02-06': 'Emancipação Política', '2025-06-13': 'Santo Antônio', '2025-12-12': 'Feriado Municipal Evangélico', '2026-02-02': 'Padroeira', '2026-02-06': 'Emancipação Política', '2026-06-13': 'Santo Antônio', '2026-12-12': 'Feriado Municipal Evangélico' },
+        };
+        const comarcas = Object.keys(holidayDetails).filter(c => c !== 'geral').sort((a, b) => a.localeCompare(b));
+        let lastCalculationData = null;
+
+        document.querySelectorAll('.calc-tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.calc-tab-btn').forEach(b => {
+                    b.classList.remove('border-brito-justice-600', 'text-brito-justice-700', 'dark:border-neutral-300', 'dark:text-neutral-200');
+                    b.classList.add('border-transparent', 'text-gray-500', 'dark:text-neutral-400');
+                });
+                btn.classList.add('border-brito-justice-600', 'text-brito-justice-700', 'dark:border-neutral-300', 'dark:text-neutral-200');
+                btn.classList.remove('border-transparent', 'text-gray-500', 'dark:text-neutral-400');
+                
+                document.querySelectorAll('.calc-content').forEach(c => c.classList.add('hidden'));
+                document.getElementById(`calc-${btn.dataset.calctab}`).classList.remove('hidden');
+                document.getElementById(`calc-${btn.dataset.calctab}`).classList.add('block');
+            };
+        });
+
+        const comarcaOptions = '<option value="geral">Todas as Comarcas (Geral)</option>' + comarcas.map(c => `<option value="${c}">${c}</option>`).join('');
+        document.querySelectorAll('select[id^="comarca-"]').forEach(s => { s.innerHTML = comarcaOptions; s.value = 'Itabaiana'; });
+        
+        const prazoOptions = `
+            <optgroup label="Petições Iniciais e Respostas"><option value="15" selected>Contestação / Réplica (15 dias)</option></optgroup>
+            <optgroup label="Recursos"><option value="15">Apelação / Agravo (15 dias)</option><option value="5">Embargos de Declaração (5 dias)</option></optgroup>
+            <optgroup label="Outros"><option value="5">Manifestação (5 dias)</option><option value="10">Manifestação (10 dias)</option><option value="custom">Outro Prazo</option></optgroup>
+        `;
+        document.querySelectorAll('select[id^="prazo-tipo-"]').forEach(s => s.innerHTML = prazoOptions);
+
+        ['dje', 'eletronica'].forEach(type => {
+            const select = document.getElementById(`prazo-tipo-${type}`);
+            const wrapper = document.getElementById(`custom-prazo-${type}-wrapper`);
+            select.addEventListener('change', () => wrapper.style.display = select.value === 'custom' ? 'block' : 'none');
+        });
+
+        const updateCalcWeekday = (id, targetId) => {
+            const val = document.getElementById(id).value;
+            if(!val) return;
+            const d = new Date(val + 'T00:00:00Z');
+            const idx = calendarData[val];
+            document.getElementById(targetId).textContent = idx !== undefined ? weekdaysCalc[idx] : 'Data fora do período';
+        };
+        document.getElementById('disponibilizacao-date').addEventListener('change', () => updateCalcWeekday('disponibilizacao-date', 'disponibilizacao-weekday'));
+        document.getElementById('certificacao-date').addEventListener('change', () => updateCalcWeekday('certificacao-date', 'certificacao-weekday'));
+
+        function isBusinessDayCalc(date, comarca) {
+            const dateString = date.toISOString().slice(0,10);
+            const dayOfWeek = calendarData[dateString];
+            if (dayOfWeek === undefined) return { isWorkDay: false, reason: 'Fora de 2025/2026' };
+            if (dayOfWeek === 0 || dayOfWeek === 6) return { isWorkDay: false, reason: weekdaysCalc[dayOfWeek] };
+            const holidayName = holidayDetails.geral[dateString] || (holidayDetails[comarca] ? holidayDetails[comarca][dateString] : null);
+            if (holidayName) return { isWorkDay: false, reason: holidayName };
+            
+            const year = date.getUTCFullYear(); const month = date.getUTCMonth(); const day = date.getUTCDate();
+            if ((year === 2025 && month === 11 && day >= 20) || (year === 2026 && month === 0 && day <= 20) || (year === 2026 && month === 11 && day >= 20) || (year === 2027 && month === 0 && day <= 20)) return { isWorkDay: false, reason: 'Recesso Forense' };
+            return { isWorkDay: true, reason: 'Dia Útil' };
+        }
+
+        function getNextBusinessDayCalc(startDate, comarca) {
+            let currentDate = new Date(startDate.valueOf());
+            let timeline = [];
+            while (true) {
+                const check = isBusinessDayCalc(currentDate, comarca);
+                timeline.push({ date: new Date(currentDate.valueOf()), ...check });
+                if (check.isWorkDay) return { businessDay: currentDate, timeline };
+                currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+            }
+        }
+
+        function addBusinessDaysCalc(startDate, days, comarca) {
+            let currentDate = new Date(startDate.valueOf());
+            let addedDays = 0; let timeline = [];
+            while (addedDays < days) {
+                const check = isBusinessDayCalc(currentDate, comarca);
+                if (check.isWorkDay) addedDays++;
+                timeline.push({ date: new Date(currentDate.valueOf()), ...check });
+                if (addedDays < days) currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+            }
+            return { finalDate: currentDate, timeline };
+        }
+        
+        function getPrevBusinessDaysCalc(date, days, comarca) {
+            let currentDate = new Date(date.valueOf());
+            let subtractedDays = 0;
+            while (subtractedDays < days) {
+                currentDate.setUTCDate(currentDate.getUTCDate() - 1);
+                if (isBusinessDayCalc(currentDate, comarca).isWorkDay) subtractedDays++;
+            }
+            return currentDate;
+        }
+
+        function calculatePrazo(type) {
+            const isDJE = type === 'dje';
+            const comarca = document.getElementById(`comarca-${type}`).value;
+            const dateInput = document.getElementById(isDJE ? 'disponibilizacao-date' : 'certificacao-date').value;
+            const prazoSelect = document.getElementById(`prazo-tipo-${type}`);
+            let days = parseInt(prazoSelect.value);
+            if(isNaN(days)) days = parseInt(document.getElementById(`custom-prazo-${type}`).value);
+            const prazoNome = prazoSelect.options[prazoSelect.selectedIndex].text;
+
+            if(!dateInput || !days) return;
+
+            const initialDate = new Date(dateInput + 'T00:00:00Z');
+            let eventDate, startDate, initialTimeline = [];
+            
+            if (isDJE) {
+                initialTimeline.push({ date: new Date(initialDate), ...isBusinessDayCalc(initialDate, comarca), reason: 'Disponibilização', event: 'Disponibilização' });
+                let d = new Date(initialDate); d.setUTCDate(d.getUTCDate() + 1);
+                const pubResult = getNextBusinessDayCalc(d, comarca);
+                eventDate = pubResult.businessDay;
+                pubResult.timeline.slice(0, -1).forEach(t => initialTimeline.push({...t, event: 'Interstício Disp-Pub'}));
+                initialTimeline.push({ date: new Date(eventDate), ...isBusinessDayCalc(eventDate, comarca), reason: 'Publicação', event: 'Publicação' });
+                let s = new Date(eventDate); s.setUTCDate(s.getUTCDate() + 1);
+                const startResult = getNextBusinessDayCalc(s, comarca);
+                startDate = startResult.businessDay;
+                startResult.timeline.slice(0, -1).forEach(t => initialTimeline.push({...t, event: 'Interstício Pub-Início'}));
+            } else {
+                initialTimeline.push({ date: new Date(initialDate), ...isBusinessDayCalc(initialDate, comarca), reason: 'Certificação', event: 'Certificação' });
+                eventDate = initialDate;
+                let s = new Date(initialDate); s.setUTCDate(s.getUTCDate() + 1);
+                const startResult = getNextBusinessDayCalc(s, comarca);
+                startDate = startResult.businessDay;
+                startResult.timeline.slice(0, -1).forEach(t => initialTimeline.push({...t, event: 'Interstício Cert-Início'}));
+            }
+
+            const result = addBusinessDaysCalc(startDate, days, comarca);
+            const taskDeadline = getPrevBusinessDaysCalc(result.finalDate, 2, comarca);
+            const fullTimeline = [...initialTimeline, ...result.timeline.map(t => ({...t, event: 'Contagem'}))];
+            
+            lastCalculationData = {
+                type: isDJE ? 'DJE' : 'Eletrônica',
+                prazoNome: prazoNome, comarca: comarca,
+                eventLabel: isDJE ? 'Data da Publicação' : 'Data da Certificação',
+                eventDateStr: eventDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
+                startDateStr: startDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
+                finalDateStr: result.finalDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
+                finalDateObj: result.finalDate, taskDateObj: taskDeadline,
+                holidays: result.timeline.filter(t => !t.isWorkDay && t.reason !== 'Fim de Semana').map(t => `${t.date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} - ${t.reason}`)
+            };
+
+            let timelineHTML = '';
+            let dayCount = 0;
+            fullTimeline.forEach(item => {
+                let statusColor = 'text-gray-400 dark:text-neutral-500', statusText = item.reason;
+                if (item.event === 'Contagem' && item.isWorkDay) { dayCount++; statusColor = 'text-brito-justice-700 dark:text-neutral-200 font-bold'; statusText = `${dayCount}º Dia Útil`; } 
+                else if (item.event === 'Disponibilização' || item.event === 'Certificação') { statusColor = 'text-blue-600 dark:text-blue-400 font-bold'; statusText = item.event; } 
+                else if (item.event === 'Publicação') { statusColor = 'text-green-600 dark:text-green-400 font-bold'; statusText = 'Data da Publicação'; } 
+                else if (!item.isWorkDay) { statusColor = 'text-red-500 dark:text-red-400'; }
+
+                timelineHTML += `<li class="flex justify-between items-center py-2 border-b border-gray-100 dark:border-neutral-700 last:border-0 hover:bg-gray-50 dark:hover:bg-neutral-700/50 px-2 rounded transition-colors">
+                    <span class="text-sm text-gray-700 dark:text-neutral-300">${item.date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} <span class="text-xs text-gray-400 ml-1">(${weekdaysCalc[calendarData[item.date.toISOString().slice(0,10)]]})</span></span>
+                    <span class="text-xs font-mono text-right ${statusColor}">${statusText}</span>
+                </li>`;
+            });
+
+            document.getElementById(`result-${type}`).innerHTML = `
+                <div class="bg-brito-paper dark:bg-neutral-700/50 border-l-4 border-brito-justice-600 dark:border-neutral-500 rounded p-6 fade-in shadow-sm mt-8">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wide mb-1">Prazo Fatal</h4>
+                            <p class="text-3xl font-serif font-bold text-brito-justice-900 dark:text-white">${result.finalDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</p>
+                        </div>
+                        <div class="mt-4 md:mt-0 text-right">
+                             <p class="text-sm text-gray-500 dark:text-neutral-400">Início: <strong class="text-gray-700 dark:text-neutral-200">${startDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</strong></p>
+                             <p class="text-xs text-amber-600 dark:text-amber-500 mt-1">Sugestão (D-2): <strong>${taskDeadline.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</strong></p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <button onclick="window.addGoogleCalendar('task')" class="col-span-1 bg-white dark:bg-neutral-600 border border-gray-200 dark:border-neutral-500 hover:bg-gray-50 dark:hover:bg-neutral-500 text-brito-justice-800 dark:text-white text-xs font-bold py-2 px-3 rounded shadow-sm"><i class="far fa-calendar-check text-amber-600"></i> Agendar Tarefa (D-2)</button>
+                        <button onclick="window.addGoogleCalendar('fatal')" class="col-span-1 bg-white dark:bg-neutral-600 border border-gray-200 dark:border-neutral-500 hover:bg-gray-50 dark:hover:bg-neutral-500 text-brito-justice-800 dark:text-white text-xs font-bold py-2 px-3 rounded shadow-sm"><i class="far fa-calendar-times text-red-600"></i> Agendar Vencimento</button>
+                    </div>
+                    <button onclick="window.openCertidaoModal()" class="w-full bg-brito-justice-50 dark:bg-neutral-800 border border-brito-justice-200 dark:border-neutral-600 hover:bg-brito-justice-100 dark:hover:bg-neutral-700 text-brito-justice-800 dark:text-neutral-200 text-sm font-bold py-2.5 px-4 rounded shadow-sm"><i class="fas fa-file-contract"></i> Gerar Certidão Visual</button>
+                    <details class="group mt-4">
+                        <summary class="flex items-center text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider cursor-pointer hover:text-brito-justice-600 dark:hover:text-neutral-200 select-none">
+                            <i class="fas fa-chevron-right mr-2 transform group-open:rotate-90 transition-transform duration-200"></i> Memória de Cálculo Detalhada
+                        </summary>
+                        <ul class="mt-3 pl-2 max-h-64 overflow-y-auto custom-scrollbar">${timelineHTML}</ul>
+                    </details>
+                </div>
+            `;
+        }
+
+        document.getElementById('form-dje').addEventListener('submit', e => { e.preventDefault(); calculatePrazo('dje'); });
+        document.getElementById('form-eletronica').addEventListener('submit', e => { e.preventDefault(); calculatePrazo('eletronica'); });
+
+        window.addGoogleCalendar = function(type) {
+            if (!lastCalculationData) return;
+            const description = `Calculadora de Prazos TJSE\nComarca: ${lastCalculationData.comarca}\nTipo: ${lastCalculationData.prazoNome}\n${lastCalculationData.eventLabel}: ${lastCalculationData.eventDateStr}\nInício da Contagem: ${lastCalculationData.startDateStr}\nPrazo Fatal: ${lastCalculationData.finalDateStr}`.trim();
+            const title = type === 'task' ? `TAREFA: ${lastCalculationData.comarca}` : `FATAL: ${lastCalculationData.comarca}`;
+            const dateObj = type === 'task' ? lastCalculationData.taskDateObj : lastCalculationData.finalDateObj;
+            const details = type === 'task' ? `ALERTA DE PRAZO INTERNO (D-2)\n\n${description}` : `VENCIMENTO DO PRAZO\n\n${description}`;
+            
+            const startDateStr = dateObj.toISOString().replace(/-|:|\.\d+/g, "").slice(0, 8);
+            let nextDay = new Date(dateObj); nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+            const endDateStr = nextDay.toISOString().replace(/-|:|\.\d+/g, "").slice(0, 8);
+            
+            window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startDateStr}/${endDateStr}&details=${encodeURIComponent(details)}`, '_blank');
+        };
+
+        window.openCertidaoModal = function() {
+            if(!lastCalculationData) return;
+            document.getElementById('cert-comarca').textContent = lastCalculationData.comarca;
+            document.getElementById('cert-evento-tipo').textContent = lastCalculationData.eventLabel;
+            document.getElementById('cert-data-evento').textContent = lastCalculationData.eventDateStr;
+            document.getElementById('cert-inicio-contagem').textContent = lastCalculationData.startDateStr;
+            document.getElementById('cert-data-fatal').textContent = lastCalculationData.finalDateStr;
+            
+            const list = document.getElementById('cert-feriados-list');
+            list.innerHTML = '';
+            if(lastCalculationData.holidays.length > 0) {
+                lastCalculationData.holidays.forEach(h => {
+                    const li = document.createElement('li'); li.textContent = h; list.appendChild(li);
+                });
+            } else { list.innerHTML = '<li>Sem suspensões ou feriados em dias úteis no período.</li>'; }
+
+            document.getElementById('certidao-modal').classList.remove('hidden');
+            document.getElementById('certidao-modal').classList.add('flex');
+        };
+
+        window.closeCertidaoModal = function() {
+            document.getElementById('certidao-modal').classList.add('hidden');
+            document.getElementById('certidao-modal').classList.remove('flex');
+        };
+
+    </script>
+</body>
+</html>
