@@ -474,7 +474,7 @@
 <!-- ======================================================= -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { initializeFirestore, persistentLocalCache, persistentSingleTabManager, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     window.appState = {
@@ -557,7 +557,7 @@
     try {
         const firebaseConfig = { apiKey: "AIzaSyAM5QFsM6h3by58bYknUOxV53wWN0J5_WA", authDomain: "brito-box.firebaseapp.com", projectId: "brito-box", storageBucket: "brito-box.firebasestorage.app", messagingSenderId: "902367621822", appId: "1:902367621822:web:ed9b88cddd3870d529a4ef" };
         const app = initializeApp(firebaseConfig);
-        db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentSingleTabManager()}) });
+        db = getFirestore(app);
         window.db = db;
         auth = getAuth(app); provider = new GoogleAuthProvider();
 
