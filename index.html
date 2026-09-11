@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Brito Box</title>
+    <meta name="description" content="Gerenciador jurídico com controle de tarefas, calculadora de prazos processuais TJSE e gestão de finanças pessoais.">
+    <meta property="og:title" content="Brito Box">
+    <meta property="og:description" content="Gerenciador jurídico com controle de tarefas, calculadora de prazos processuais TJSE e gestão de finanças pessoais.">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -432,17 +435,108 @@
         </div>
     </div>
     <div id="modal-settings" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50 backdrop-blur-sm fade-in">
-        <div class="bg-white dark:bg-[#1A1A1E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+        <div class="bg-white dark:bg-[#1A1A1E] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-slate-800">
             <div class="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-800/30">
                 <h2 class="text-xl font-bold text-slate-900 dark:text-white">Configurações</h2>
                 <button onclick="window.closeSettingsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fas fa-times text-xl"></i></button>
             </div>
             <div class="p-6 space-y-6">
-                <div><label class="block text-sm font-bold text-slate-900 dark:text-white mb-2">Limpeza de Tarefas Concluídas</label><select id="select-delete-delay" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none"><option value="0">Imediatamente</option><option value="1">Após 1 dia</option><option value="3">Após 3 dias</option><option value="7">Após 7 dias</option><option value="never">Nunca</option></select></div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-900 dark:text-white mb-2">Limpeza de Tarefas Concluídas</label>
+                    <select id="select-delete-delay" class="w-full bg-white dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-brito-accent outline-none">
+                        <option value="0">Imediatamente</option>
+                        <option value="1">Após 1 dia</option>
+                        <option value="3">Após 3 dias</option>
+                        <option value="7">Após 7 dias</option>
+                        <option value="never">Nunca</option>
+                    </select>
+                </div>
+
+                <div class="border-t border-gray-100 dark:border-slate-800 pt-5 space-y-3">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-900 dark:text-white mb-1">Domínio para o Firebase</label>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Para habilitar login com o Google, adicione este domínio aos Domínios Autorizados no Console do Firebase:</p>
+                        <div class="flex items-center space-x-2">
+                            <input id="settings-current-domain" readonly class="flex-1 bg-gray-50 dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 font-mono text-xs text-slate-800 dark:text-slate-200 select-all outline-none">
+                            <button onclick="window.copyCurrentDomain()" class="px-3.5 py-2 bg-brito-accent hover:bg-brito-accentHover text-white text-xs font-bold rounded-lg transition-colors shrink-0">
+                                Copiar
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="https://console.firebase.google.com/project/brito-box/authentication/settings" target="_blank" class="text-xs text-brito-accent hover:underline inline-flex items-center gap-1.5 font-medium">
+                            <i class="fas fa-external-link-alt text-[10px]"></i> Abrir Configurações no Firebase Console
+                        </a>
+                    </div>
+                </div>
             </div>
-            <div class="p-4 bg-gray-50 dark:bg-slate-800/30 border-t border-gray-100 dark:border-slate-800 flex justify-end"><button onclick="window.saveSettings()" class="px-5 py-2 text-sm font-medium text-white bg-brito-accent hover:bg-brito-accentHover rounded-lg shadow-sm">Concluir</button></div>
+            <div class="p-4 bg-gray-50 dark:bg-slate-800/30 border-t border-gray-100 dark:border-slate-800 flex justify-end">
+                <button onclick="window.saveSettings()" class="px-5 py-2 text-sm font-medium text-white bg-brito-accent hover:bg-brito-accentHover rounded-lg shadow-sm">Concluir</button>
+            </div>
         </div>
     </div>
+
+    <!-- Modal Domínio Não Autorizado (Firebase auth/unauthorized-domain) -->
+    <div id="modal-unauthorized-domain" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm fade-in">
+        <div class="bg-white dark:bg-[#1A1A1E] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-slate-800">
+            <div class="p-5 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-amber-50 dark:bg-amber-950/30">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                        <i class="fas fa-shield-alt text-base"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 dark:text-white leading-snug">Domínio não autorizado no Firebase</h2>
+                        <p class="text-[11px] text-amber-700 dark:text-amber-400 font-mono">auth/unauthorized-domain</p>
+                    </div>
+                </div>
+                <button onclick="window.closeUnauthorizedDomainModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            
+            <div class="p-6 space-y-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p>
+                    O Firebase bloqueou o login com Google porque este domínio ainda não está cadastrado na lista de <strong>Domínios Autorizados</strong> do projeto <code class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 font-bold text-slate-800 dark:text-slate-200">brito-box</code>.
+                </p>
+
+                <div class="space-y-1.5">
+                    <label class="block font-bold text-gray-500 uppercase tracking-wider text-[10px]">Domínio deste Ambiente:</label>
+                    <div class="flex items-center space-x-2">
+                        <input id="domain-to-copy" readonly class="flex-1 bg-gray-50 dark:bg-[#121214] border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-2 font-mono text-xs text-slate-800 dark:text-slate-200 select-all outline-none">
+                        <button id="btn-copy-domain" onclick="window.copyCurrentDomain()" class="px-3.5 py-2 bg-brito-accent hover:bg-brito-accentHover text-white font-medium rounded-lg transition-colors flex items-center space-x-1.5 shrink-0">
+                            <i class="fas fa-copy text-xs"></i>
+                            <span id="btn-copy-domain-text">Copiar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 dark:bg-slate-800/40 p-4 rounded-xl border border-gray-200/70 dark:border-slate-800 space-y-2">
+                    <p class="font-bold text-slate-900 dark:text-white text-xs">Como autorizar em 3 passos:</p>
+                    <ol class="list-decimal pl-4 space-y-1.5 text-gray-600 dark:text-gray-300 text-xs">
+                        <li>Acesse o <a href="https://console.firebase.google.com/project/brito-box/authentication/settings" target="_blank" class="text-brito-accent hover:underline font-bold inline-flex items-center gap-1">Console do Firebase <i class="fas fa-external-link-alt text-[9px]"></i></a>.</li>
+                        <li>Na aba <strong>Configurações (Settings)</strong>, desça até <strong>Domínios autorizados</strong>.</li>
+                        <li>Clique em <strong>Adicionar domínio</strong>, cole o domínio acima e salve.</li>
+                    </ol>
+                </div>
+
+                <div class="p-3.5 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-xl text-blue-900 dark:text-blue-300 text-xs flex items-start space-x-2.5">
+                    <i class="fas fa-info-circle text-brito-accent mt-0.5 text-sm shrink-0"></i>
+                    <div>
+                        <strong class="block mb-0.5">Sem tempo para configurar agora?</strong>
+                        Você pode continuar usando o <strong>Modo Local</strong>. Todas as tarefas, prazos e finanças são salvos no seu navegador e você pode exportar backup a qualquer momento.
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-gray-50 dark:bg-slate-800/30 border-t border-gray-100 dark:border-slate-800 flex flex-col-reverse sm:flex-row justify-end gap-2">
+                <button onclick="window.closeUnauthorizedDomainModal()" class="px-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors">Fechar</button>
+                <button onclick="window.activateLocalMode()" class="px-4 py-2 text-xs font-bold text-white bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                    <i class="fas fa-hdd"></i> Continuar no Modo Local
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none max-w-sm w-full px-4"></div>
     <!-- Modal Certidão Calculadora -->
     <div id="certidao-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 fade-in">
         <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full overflow-hidden">
@@ -504,32 +598,141 @@
         if(window.appState.activeTab === 'finances') window.renderCharts();
     };
 
+    window.showToast = (msg, type = 'info') => {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        const colors = {
+            info: 'bg-slate-900 text-white dark:bg-slate-800 dark:text-white border-slate-700',
+            success: 'bg-emerald-600 text-white border-emerald-500',
+            warning: 'bg-amber-600 text-white border-amber-500',
+            error: 'bg-rose-600 text-white border-rose-500'
+        };
+        const icons = {
+            info: 'fa-info-circle',
+            success: 'fa-check-circle',
+            warning: 'fa-exclamation-triangle',
+            error: 'fa-times-circle'
+        };
+        toast.className = `flex items-center space-x-2.5 px-4 py-3 rounded-xl shadow-xl text-xs font-medium border ${colors[type] || colors.info} transition-all transform duration-300 opacity-0 translate-y-2 pointer-events-auto`;
+        toast.innerHTML = `
+            <i class="fas ${icons[type] || icons.info} text-sm shrink-0"></i>
+            <span class="flex-1">${escapeHTML(msg)}</span>
+            <button type="button" class="opacity-70 hover:opacity-100 ml-2 p-1"><i class="fas fa-times"></i></button>
+        `;
+        toast.querySelector('button').onclick = () => {
+            toast.classList.add('opacity-0', 'translate-y-2');
+            setTimeout(() => toast.remove(), 300);
+        };
+        container.appendChild(toast);
+        requestAnimationFrame(() => {
+            toast.classList.remove('opacity-0', 'translate-y-2');
+        });
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 4000);
+    };
+
+    window.openUnauthorizedDomainModal = () => {
+        const modal = document.getElementById('modal-unauthorized-domain');
+        const domainInput = document.getElementById('domain-to-copy');
+        if (domainInput) domainInput.value = window.location.hostname;
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    };
+
+    window.closeUnauthorizedDomainModal = () => {
+        const modal = document.getElementById('modal-unauthorized-domain');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    };
+
+    window.copyCurrentDomain = () => {
+        const domain = window.location.hostname;
+        const copyFeedback = () => {
+            const btnText = document.getElementById('btn-copy-domain-text');
+            if (btnText) {
+                btnText.textContent = 'Copiado!';
+                setTimeout(() => { btnText.textContent = 'Copiar'; }, 2000);
+            }
+            window.showToast("Domínio copiado para a área de transferência!", "success");
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(domain).then(copyFeedback).catch(() => {
+                const domainInput = document.getElementById('domain-to-copy') || document.getElementById('settings-current-domain');
+                if (domainInput) {
+                    domainInput.select();
+                    document.execCommand('copy');
+                    copyFeedback();
+                }
+            });
+        } else {
+            const domainInput = document.getElementById('domain-to-copy') || document.getElementById('settings-current-domain');
+            if (domainInput) {
+                domainInput.select();
+                document.execCommand('copy');
+                copyFeedback();
+            }
+        }
+    };
+
+    window.activateLocalMode = () => {
+        window.appState.isLocalMode = true;
+        if (!window.appState.uid) window.appState.uid = 'local-user';
+        window.closeUnauthorizedDomainModal();
+        renderApp();
+        window.showToast("Modo Local ativo! Suas tarefas e finanças estão salvas no navegador.", "info");
+    };
+
     window.openTaskModal = (id = null) => {
-        if(!window.appState.uid) { alert("Atenção: Faça login com o Google para poder cadastrar tarefas!"); return; }
+        if (!window.appState.uid) {
+            window.appState.uid = 'local-user';
+            window.appState.isLocalMode = true;
+        }
         window.appState.editingTaskId = id; 
         document.getElementById('form-task').reset(); 
         document.getElementById('modal-task-title').textContent = id ? 'Editar Tarefa' : 'Nova Tarefa';
         if(id) { 
             const t = window.appState.tasks.find(x => x.id === id); 
-            document.getElementById('task-title').value = t.title || ''; 
-            document.getElementById('task-client').value = t.clientName || ''; 
-            document.getElementById('task-case').value = t.caseNumber || ''; 
-            document.getElementById('task-conf').value = t.confeccaoDate || ''; 
-            document.getElementById('task-fatal').value = t.fatalDate || ''; 
-            document.getElementById('task-complexity').value = t.complexity || 'Media'; 
-            document.getElementById('task-notes').value = t.notes || ''; 
+            if (t) {
+                document.getElementById('task-title').value = t.title || ''; 
+                document.getElementById('task-client').value = t.clientName || ''; 
+                document.getElementById('task-case').value = t.caseNumber || ''; 
+                document.getElementById('task-conf').value = t.confeccaoDate || ''; 
+                document.getElementById('task-fatal').value = t.fatalDate || ''; 
+                document.getElementById('task-complexity').value = t.complexity || 'Media'; 
+                document.getElementById('task-notes').value = t.notes || ''; 
+            }
         }
         document.getElementById('modal-task').classList.remove('hidden'); document.getElementById('modal-task').classList.add('flex');
     };
     window.closeTaskModal = () => { document.getElementById('modal-task').classList.add('hidden'); document.getElementById('modal-task').classList.remove('flex'); };
     window.closeDeleteModal = () => { document.getElementById('modal-delete').classList.add('hidden'); document.getElementById('modal-delete').classList.remove('flex'); };
-    window.openSettingsModal = () => { document.getElementById('select-delete-delay').value = window.appState.deleteDelay; document.getElementById('modal-settings').classList.remove('hidden'); document.getElementById('modal-settings').classList.add('flex'); };
+    window.openSettingsModal = () => { 
+        document.getElementById('select-delete-delay').value = window.appState.deleteDelay; 
+        const sDomain = document.getElementById('settings-current-domain');
+        if (sDomain) sDomain.value = window.location.hostname;
+        document.getElementById('modal-settings').classList.remove('hidden'); 
+        document.getElementById('modal-settings').classList.add('flex'); 
+    };
     window.closeSettingsModal = () => { document.getElementById('modal-settings').classList.add('hidden'); document.getElementById('modal-settings').classList.remove('flex'); };
 
     function renderApp() {
         ['tasks-view', 'calculator-view', 'finances-view'].forEach(id => document.getElementById(id).classList.add('view-hidden'));
         document.getElementById('btn-new-task').classList.add('hidden');
-        const subtitle = window.appState.uid ? '<span class="text-green-500 font-bold"><i class="fas fa-check-circle mr-1"></i>Sincronizado na Nuvem</span>' : 'Aguardando Login no Google...';
+        
+        const isCloud = window.appState.uid && window.appState.uid !== 'local-user';
+        const subtitle = isCloud 
+            ? '<span class="text-green-500 font-bold"><i class="fas fa-check-circle mr-1"></i>Sincronizado na Nuvem</span>' 
+            : '<span class="text-amber-500 font-semibold"><i class="fas fa-hdd mr-1"></i>Modo Local</span><button onclick="window.loginGoogle()" class="ml-2 text-xs text-brito-accent hover:underline inline-flex items-center gap-1 font-medium"><i class="fab fa-google"></i> Conectar Nuvem</button>';
         
         if (window.appState.activeTab === 'calculator') {
             document.getElementById('calculator-view').classList.remove('view-hidden');
@@ -568,21 +771,46 @@
         auth = getAuth(app); provider = new GoogleAuthProvider();
 
         window.loginGoogle = () => {
-            document.getElementById('btn-login').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
+            const btnLogin = document.getElementById('btn-login');
+            if (btnLogin) btnLogin.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Conectando...';
             
-            signInWithPopup(auth, provider).catch(err => { 
+            signInWithPopup(auth, provider).then(() => {
+                window.showToast("Login com Google realizado com sucesso!", "success");
+            }).catch(err => { 
                 console.error("Erro no login:", err);
-                alert("Erro: " + err.message); 
-                document.getElementById('btn-login').innerHTML = '<i class="fab fa-google text-red-500 text-sm"></i> Entrar com Google'; 
+                if (btnLogin) btnLogin.innerHTML = '<i class="fab fa-google text-red-500 text-sm"></i> Entrar com Google'; 
+                
+                if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.includes('unauthorized-domain'))) {
+                    window.openUnauthorizedDomainModal();
+                } else if (err.code === 'auth/popup-closed-by-user') {
+                    window.showToast("Login cancelado.", "info");
+                } else if (err.code === 'auth/popup-blocked') {
+                    window.showToast("Pop-up bloqueado pelo navegador. Por favor, permita pop-ups.", "warning");
+                } else {
+                    window.showToast("Erro no login: " + (err.message || err.code), "error");
+                }
             });
         };
-        window.logoutGoogle = () => signOut(auth);
+        window.logoutGoogle = () => {
+            if (auth && window.appState.uid && window.appState.uid !== 'local-user') {
+                signOut(auth);
+            }
+            window.appState.uid = 'local-user';
+            window.appState.isLocalMode = true;
+            document.getElementById('btn-login').classList.remove('hidden');
+            document.getElementById('btn-login').innerHTML = '<i class="fab fa-google text-red-500 text-sm"></i> Entrar com Google';
+            document.getElementById('user-info').classList.add('hidden');
+            document.getElementById('user-info').classList.remove('flex');
+            window.showToast("Desconectado da conta Google. Modo Local ativado.", "info");
+            renderApp();
+        };
 
         getRedirectResult(auth).catch(err => console.error("Redirect Erro:", err));
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 window.appState.uid = user.uid;
+                window.appState.isLocalMode = false;
                 document.getElementById('btn-login').classList.add('hidden');
                 document.getElementById('user-info').classList.remove('hidden');
                 document.getElementById('user-info').classList.add('flex');
@@ -595,13 +823,20 @@
                         window.appState.tasks = data.tasks || [];
                         window.appState.finances = data.finances || { months: [], notes: "" };
                     } else {
-                        window.appState.tasks = []; window.appState.finances = { months: [], notes: "" };
+                        // Se não existe na nuvem mas temos dados locais, sincroniza os locais
+                        if (window.appState.tasks.length > 0 || (window.appState.finances && window.appState.finances.months && window.appState.finances.months.length > 0)) {
+                            window.saveToCloud();
+                        } else {
+                            window.appState.tasks = []; window.appState.finances = { months: [], notes: "" };
+                        }
                     }
                     document.getElementById('sync-status').innerHTML = '<i class="fas fa-cloud text-[9px] mr-1 text-green-500"></i>Sincronizado';
                     renderApp();
                 });
             } else {
-                window.appState.uid = null;
+                // Modo local ativo
+                if (!window.appState.uid) window.appState.uid = 'local-user';
+                window.appState.isLocalMode = true;
                 document.getElementById('btn-login').classList.remove('hidden');
                 document.getElementById('btn-login').innerHTML = '<i class="fab fa-google text-red-500 text-sm"></i> Entrar com Google';
                 document.getElementById('user-info').classList.add('hidden');
@@ -609,25 +844,56 @@
                 renderApp();
             }
         });
-    } catch (error) { console.error("Firebase desligado:", error); }
+    } catch (error) { 
+        console.error("Firebase desligado:", error); 
+        window.appState.uid = 'local-user';
+        window.appState.isLocalMode = true;
+    }
+
+    // Carregar dados salvos no localStorage no início
+    try {
+        const localTasks = localStorage.getItem('brito-local-tasks');
+        const localFin = localStorage.getItem('brito-local-finances');
+        if (localTasks) window.appState.tasks = JSON.parse(localTasks);
+        if (localFin) window.appState.finances = JSON.parse(localFin);
+    } catch(e) {
+        console.warn("Erro ao ler dados locais:", e);
+    }
+    if (!window.appState.uid) {
+        window.appState.uid = 'local-user';
+        window.appState.isLocalMode = true;
+    }
 
     window.saveToCloud = () => {
-        if (!window.appState.uid || !window.db) return alert("Faça login para poder salvar os dados!");
+        // Salva sempre no localStorage para garantia de persistência instantânea
+        try {
+            localStorage.setItem('brito-local-tasks', JSON.stringify(window.appState.tasks));
+            localStorage.setItem('brito-local-finances', JSON.stringify(window.appState.finances));
+        } catch(e) {
+            console.warn("Falha ao salvar no localStorage:", e);
+        }
+
         if (window.appState.activeTab === 'finances') { window.renderFinMonthly(); window.renderCharts(); }
         else if (window.appState.activeTab !== 'calculator') { window.renderTasksList(); }
         
         const syncStatus = document.getElementById('sync-status');
-        if (syncStatus) syncStatus.innerHTML = '<i class="fas fa-sync fa-spin text-[9px] mr-1 text-orange-500"></i>Salvando na Nuvem...';
+        const isCloud = window.appState.uid && window.appState.uid !== 'local-user' && window.db;
 
-        setDoc(doc(window.db, "users", window.appState.uid), { 
-            tasks: window.appState.tasks, 
-            finances: window.appState.finances 
-        }, { merge: true })
-        .then(() => { if (syncStatus) syncStatus.innerHTML = '<i class="fas fa-cloud text-[9px] mr-1 text-green-500"></i>Sincronizado'; })
-        .catch(e => {
-            console.error("Erro no envio:", e);
-            if (syncStatus) syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-[9px] mr-1 text-red-500"></i>Erro';
-        });
+        if (isCloud) {
+            if (syncStatus) syncStatus.innerHTML = '<i class="fas fa-sync fa-spin text-[9px] mr-1 text-orange-500"></i>Salvando na Nuvem...';
+
+            setDoc(doc(window.db, "users", window.appState.uid), { 
+                tasks: window.appState.tasks, 
+                finances: window.appState.finances 
+            }, { merge: true })
+            .then(() => { if (syncStatus) syncStatus.innerHTML = '<i class="fas fa-cloud text-[9px] mr-1 text-green-500"></i>Sincronizado'; })
+            .catch(e => {
+                console.error("Erro no envio:", e);
+                if (syncStatus) syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-[9px] mr-1 text-red-500"></i>Erro Nuvem (Salvo Local)';
+            });
+        } else {
+            if (syncStatus) syncStatus.innerHTML = '<i class="fas fa-hdd text-[9px] mr-1 text-amber-500"></i>Salvo no Navegador';
+        }
     };
 
     window.cleanupTasks = () => {
@@ -670,10 +936,18 @@
 
     window.renderTasksList = () => {
         const list = document.getElementById('tasks-list');
-        if(!window.appState.uid) { list.innerHTML = `<div class="text-center py-20 bg-white dark:bg-[#1A1A1E] rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm"><i class="fas fa-lock text-5xl text-gray-300 dark:text-gray-600 mx-auto mb-4"></i><h3 class="text-lg font-bold text-slate-900 dark:text-white">Faça login para começar</h3></div>`; return; }
+        if (!window.appState.uid) {
+            window.appState.uid = 'local-user';
+            window.appState.isLocalMode = true;
+        }
         
         if(window.cleanupTasks()) {
-            if(window.db && window.appState.uid) setDoc(doc(window.db, "users", window.appState.uid), { tasks: window.appState.tasks, finances: window.appState.finances }, { merge: true }).catch(e => {});
+            if(window.db && window.appState.uid && window.appState.uid !== 'local-user') {
+                setDoc(doc(window.db, "users", window.appState.uid), { tasks: window.appState.tasks, finances: window.appState.finances }, { merge: true }).catch(e => {});
+            }
+            try {
+                localStorage.setItem('brito-local-tasks', JSON.stringify(window.appState.tasks));
+            } catch(e) {}
         }
 
         // Auto Sort Inteligente + Order (Grupos por Datas)
@@ -711,9 +985,37 @@
         countTodayBadge.textContent = todayCount;
         if(todayCount > 0) countTodayBadge.classList.remove('hidden'); else countTodayBadge.classList.add('hidden');
 
-        if(filtered.length === 0) { list.innerHTML = `<div class="text-center py-20 bg-white dark:bg-[#1A1A1E] rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm"><i class="far fa-check-circle text-5xl text-gray-300 dark:text-gray-600 mx-auto mb-4"></i><h3 class="text-lg font-bold text-slate-900 dark:text-white">Tudo limpo por aqui!</h3></div>`; return; }
+        if(filtered.length === 0) { 
+            const emptyMsg = window.appState.activeTab === 'today' ? 'Nenhuma tarefa agendada para hoje!' : window.appState.activeTab === 'week' ? 'Nenhuma tarefa para os próximos 7 dias!' : 'Tudo limpo por aqui!';
+            list.innerHTML = `
+                <div class="text-center py-16 bg-white dark:bg-[#1A1A1E] rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm p-6">
+                    <div class="w-14 h-14 mx-auto mb-4 rounded-full bg-brito-accent/10 dark:bg-brito-accent/20 flex items-center justify-center text-brito-accent">
+                        <i class="far fa-clipboard text-2xl"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white mb-1">${emptyMsg}</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-5">Adicione prazos fatais, confecções ou diligências para organizar sua rotina.</p>
+                    <button onclick="window.openTaskModal()" class="px-4 py-2 bg-brito-accent hover:bg-brito-accentHover text-white text-xs font-bold rounded-xl shadow-sm transition-colors inline-flex items-center gap-1.5">
+                        <i class="fas fa-plus"></i> Nova Tarefa
+                    </button>
+                </div>`; 
+            return; 
+        }
 
         list.innerHTML = '';
+        if (window.appState.isLocalMode && window.appState.uid === 'local-user' && window.appState.tasks.length > 0) {
+            const localBanner = document.createElement('div');
+            localBanner.className = 'mb-3 px-3.5 py-2.5 rounded-xl bg-amber-50/90 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/30 flex items-center justify-between text-xs text-amber-800 dark:text-amber-300';
+            localBanner.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-hdd text-amber-500"></i>
+                    <span><strong>Modo Local:</strong> Tarefas salvas no navegador. Para sincronizar na nuvem, autorize o domínio no Firebase.</span>
+                </div>
+                <button onclick="window.loginGoogle()" class="ml-2 px-2.5 py-1 text-[11px] font-semibold bg-white dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-slate-700 text-slate-800 dark:text-white border border-amber-300 dark:border-amber-800/40 rounded-lg shrink-0 transition-colors">
+                    <i class="fab fa-google text-red-500 mr-1"></i> Conectar
+                </button>
+            `;
+            list.appendChild(localBanner);
+        }
         filtered.forEach((task, renderIndex) => {
             const isConcluida = task.status === 'concluida';
             let cardClass = '', textClass = '', subtextClass = '', iconClass = '';
@@ -1164,23 +1466,36 @@
     };
     window.closeCertidaoModal = () => { document.getElementById('certidao-modal').classList.add('hidden'); document.getElementById('certidao-modal').classList.remove('flex'); };
 
-// Função para exportar os dados do Brito Box manualmente
+    // Função para exportar os dados do Brito Box manualmente
     window.fazerBackupManual = () => {
-        if (!window.appState.uid) {
-            alert("Você precisa estar logado para fazer backup.");
-            return;
-        }
-
-        // Prepara os dados atuais
         const dadosParaBackup = {
             dataDoBackup: new Date().toLocaleString('pt-BR'),
             tasks: window.appState.tasks,
             finances: window.appState.finances
         };
-// Função para importar backup manual
+
+        const textoJson = JSON.stringify(dadosParaBackup, null, 2);
+        const dataBlob = new Blob([textoJson], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+
+        const dataHoje = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+        const nomeArquivo = `BritoBox-Backup-${dataHoje}.json`;
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = nomeArquivo;
+        document.body.appendChild(link);
+        link.click();
+        
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        window.showToast("Backup exportado com sucesso!", "success");
+    };
+
+    // Função para importar backup manual
     window.importarBackupManual = () => {
-        if (!window.appState.uid) return alert("Faça login com o Google primeiro.");
-        document.getElementById('input-restore-backup').click();
+        const input = document.getElementById('input-restore-backup');
+        if (input) input.click();
     };
 
     window.processarArquivoBackup = (e) => {
@@ -1190,38 +1505,18 @@
         reader.onload = (event) => {
             try {
                 const data = JSON.parse(event.target.result);
-                if (data.tasks) window.appState.tasks = data.tasks;
+                if (data.tasks && Array.isArray(data.tasks)) window.appState.tasks = data.tasks;
                 if (data.finances) window.appState.finances = data.finances;
                 
                 window.saveToCloud();
-                alert("Backup importado com sucesso e salvo na nuvem!");
+                window.showToast("Backup importado com sucesso!", "success");
                 renderApp();
             } catch (err) {
-                alert("Erro ao ler o arquivo de backup: " + err.message);
+                window.showToast("Erro ao ler o arquivo de backup: " + err.message, "error");
             }
+            e.target.value = '';
         };
         reader.readAsText(file);
-    };
-
-        // Transforma em texto JSON
-        const textoJson = JSON.stringify(dadosParaBackup, null, 2);
-        const dataBlob = new Blob([textoJson], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-
-        // Cria o nome do arquivo com a data de hoje
-        const dataHoje = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-        const nomeArquivo = `BritoBox-Backup-${dataHoje}.json`;
-
-        // Força o download
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = nomeArquivo;
-        document.body.appendChild(link);
-        link.click();
-        
-        // Limpeza
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
     };
 </script>
 </body>

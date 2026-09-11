@@ -1,0 +1,8 @@
+{
+  "name": "Brito Box",
+  "description": "Gerenciador jurídico com controle de tarefas, calculadora de prazos processuais TJSE e gestão de finanças pessoais.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
